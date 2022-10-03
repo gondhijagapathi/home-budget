@@ -8,6 +8,7 @@ export const mainDataSlice = createSlice({
     subCategories: [],
     items: [],
     measures: [],
+    spendings: [],
   },
   reducers: {
     addDialogOpen: state => {
@@ -27,6 +28,9 @@ export const mainDataSlice = createSlice({
     },
     addMeasures: (state, action) => {
         state.measures = action.payload
+    },
+    addSpendings: (state, action) => {
+      state.spendings = [...state.spendings, action.payload]
     }
   }
 })

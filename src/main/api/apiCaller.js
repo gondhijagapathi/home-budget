@@ -64,3 +64,17 @@ export function getMeasures() {
         }
       )
 }
+
+export function postData(ext, data) {
+  const res = fetch('http://rest.jagapathi.me/'+ext, {
+    method: 'post',
+    headers: { 'Content-Type': 'application/json' },
+    body: data,
+   })
+   .then((response) => response.json())
+   .then((responseJson) => {
+   })
+   .catch((error) => {
+     console.error(error);
+   });
+}

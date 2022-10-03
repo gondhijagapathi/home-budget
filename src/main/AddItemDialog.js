@@ -6,12 +6,12 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
-import { addDialogOpen, addDialogClose } from './store/mainDataSlice';
+import { addDialogClose } from './store/mainDataSlice';
 import { useDispatch } from 'react-redux'
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
-import Select, { SelectChangeEvent } from '@mui/material/Select';
+import Select from '@mui/material/Select';
 import Alert from '@mui/material/Alert';
 import { useSelector } from 'react-redux'
 import { getItems, getSubCategories } from './api/apiCaller';
@@ -27,13 +27,36 @@ export default function AddItemDialog({ isOpen }) {
     const [subCategoryMenuItems, setSubCategoryMenuItems] = React.useState([])
     const items = useSelector(state => state.mainData.items)
     const [itemsMenuItems, setItemsMenuItems] = React.useState([])
-
-    const handleClickOpen = () => {
-        dispatch(addDialogOpen())
-    };
+    const [selectedCategory, setSelectedCategory] = React.useState("")
+    const [selectedSubCategory, setSelectedSubCategory] = React.useState("")
+    const [selectedMeasure, setSelectedMeasure] = React.useState("")
+    const [selectedItem, setSelectedItem] = React.useState("")
+    const [selectedQuantity, setSelectedQuantity] = React.useState("")
+    const [selectedPrice, setSelectedPrice] = React.useState("")
+    const [status, setStatus] = React.useState({
+        message:"",
+        type:"error",
+        visible:false
+    })
 
     const handleClose = () => {
+        console.log(selectedCategory+" "+selectedSubCategory+" "+selectedMeasure+" "+selectedItem+" "+selectedQuantity+" "+selectedPrice)
         dispatch(addDialogClose())
+    };
+
+    const isEmpty = (str) => {
+        return (!str || /^\s*$/.test(str));
+    }
+    const addAnother = () => {
+        if (isEmpty(selectedCategory) || isEmpty(selectedSubCategory) ||isEmpty(selectedMeasure) ||isEmpty(selectedItem) ||isEmpty(selectedQuantity) ||isEmpty(selectedPrice)){
+            setStatus(status => ({visible:true,type:"error",message:"All fields are required"}))
+        } else {
+            setStatus(status => ({...status,visible:false}))
+        }
+    };
+
+    const addAndClose = () => {
+
     };
 
     React.useEffect(() => {
@@ -68,10 +91,12 @@ export default function AddItemDialog({ isOpen }) {
     }, [items]);
 
     function onCategoryChange(event) {
+        setSelectedCategory(event.target.value)
         getSubCategories(event.target.value)
     }
 
     function onSubCategoryChange(event) {
+        setSelectedSubCategory(event.target.value)
         getItems(event.target.value)
     }
 
@@ -82,8 +107,7 @@ export default function AddItemDialog({ isOpen }) {
                 <DialogContentText>
                     Please Add Items Properly, so that budget for this house can be calculated
                 </DialogContentText>
-                <Alert severity="success">This is a success alert — check it out!</Alert>
-                <Alert severity="error">This is a success alert — check it out!</Alert>
+                {status.visible && <Alert severity={status.type}>{status.message}</Alert>}
                 <FormControl variant="standard" sx={{ m: 1, minWidth: '100%' }}>
                     <InputLabel id="category-label">Category</InputLabel>
                     <Select
@@ -112,12 +136,13 @@ export default function AddItemDialog({ isOpen }) {
                         labelId="items-label"
                         id="items"
                         label="Items"
+                        onChange={(event)=> { setSelectedItem(event.target.value) }}
                     >
                         {itemsMenuItems}
                     </Select>
                 </FormControl>
                 <FormControl variant="standard" sx={{ m: 1, minWidth: '100%' }}>
-                    <TextField id="Qantity" label="Qantity" variant="standard" />
+                    <TextField type={"number"} id="Qantity" label="Qantity" variant="standard" onChange={(event)=> { setSelectedQuantity(event.target.value) }}/>
                 </FormControl>
                 <FormControl variant="standard" sx={{ m: 1, minWidth: '100%' }}>
                     <InputLabel id="quantity-type-label">Measurement</InputLabel>
@@ -125,17 +150,18 @@ export default function AddItemDialog({ isOpen }) {
                         labelId="quantity-type-label"
                         id="quantity-type"
                         label="Measurement"
+                        onChange={(event)=> { setSelectedMeasure(event.target.value) }}
                     >
                         {measureMenuItems}
                     </Select>
                 </FormControl>
                 <FormControl variant="standard" sx={{ m: 1, minWidth: '100%' }}>
-                    <TextField id="Price" label="Price" variant="standard" />
+                    <TextField type={"number"} id="Price" label="Price" variant="standard" onChange={(event)=> { setSelectedPrice(event.target.value) }}/>
                 </FormControl>
             </DialogContent>
             <DialogActions>
-                <Button onClick={handleClose}>Add Another</Button>
-                <Button onClick={handleClose}>Add Item and Close</Button>
+                <Button onClick={addAnother}>Add Another</Button>
+                <Button onClick={addAndClose}>Add Item and Close</Button>
                 <Button onClick={handleClose}>Close</Button>
             </DialogActions>
         </Dialog>
