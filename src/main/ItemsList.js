@@ -5,7 +5,9 @@ import Divider from '@mui/material/Divider';
 import ListItemText from '@mui/material/ListItemText';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
 import Avatar from '@mui/material/Avatar';
-import Typography from '@mui/material/Typography';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ScaleIcon from '@mui/icons-material/Scale';
+import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
 
 export default function ItemsList() {
     return (
@@ -15,18 +17,28 @@ export default function ItemsList() {
                     <Avatar alt="Remy Sharp" src="/static/images/avatar/1.jpg" />
                 </ListItemAvatar>
                 <ListItemText
-                    primary="Brunch this weekend?"
+                    primary="Carrot"
+                    style={{ color: 'white' }}
                     secondary={
                         <React.Fragment>
-                            <Typography
-                                sx={{ display: 'inline' }}
-                                component="span"
-                                variant="body2"
-                                color="text.primary"
-                            >
-                                Ali Connors
-                            </Typography>
-                            {" — I'll be in your neighborhood doing errands this…"}
+                            <List dense={false}>
+                                <ListItem>
+                                    <ListItemIcon>
+                                        <ScaleIcon />
+                                    </ListItemIcon>
+                                    <ListItemText
+                                        primary="Single-line item"
+                                    />
+                                </ListItem>
+                                <ListItem>
+                                    <ListItemIcon>
+                                        <CurrencyRupeeIcon />
+                                    </ListItemIcon>
+                                    <ListItemText
+                                        primary="Single-line item"
+                                    />
+                                </ListItem>
+                            </List>
                         </React.Fragment>
                     }
                 />
