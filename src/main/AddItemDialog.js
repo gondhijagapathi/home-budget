@@ -6,7 +6,7 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
-import { addDialogClose } from './store/mainDataSlice';
+import { addDialogClose, addSpendings } from './store/mainDataSlice';
 import { useDispatch } from 'react-redux'
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
@@ -15,11 +15,14 @@ import Select from '@mui/material/Select';
 import Alert from '@mui/material/Alert';
 import { useSelector } from 'react-redux'
 import { getItems, getSubCategories } from './api/apiCaller';
+import moment from 'moment/moment';
 
 export default function AddItemDialog({ isOpen }) {
 
     const dispatch = useDispatch()
     const categories = useSelector(state => state.mainData.categories)
+    const shops = useSelector(state => state.mainData.shops)
+    const users = useSelector(state => state.mainData.users)
     const [categoryMenuItems, setCategoryMenuItems] = React.useState([])
     const measures = useSelector(state => state.mainData.measures)
     const [measureMenuItems, setMeasureMenuItems] = React.useState([])
@@ -48,15 +51,33 @@ export default function AddItemDialog({ isOpen }) {
         return (!str || /^\s*$/.test(str));
     }
     const addAnother = () => {
-        if (isEmpty(selectedCategory) || isEmpty(selectedSubCategory) ||isEmpty(selectedMeasure) ||isEmpty(selectedItem) ||isEmpty(selectedQuantity) ||isEmpty(selectedPrice)){
-            setStatus(status => ({visible:true,type:"error",message:"All fields are required"}))
-        } else {
-            setStatus(status => ({...status,visible:false}))
+        if (validateData()) {
+            addThisItem();
         }
     };
 
-    const addAndClose = () => {
+    const validateData = () => {
+        if (isEmpty(selectedCategory) || isEmpty(selectedSubCategory) ||isEmpty(selectedMeasure) ||isEmpty(selectedItem) ||isEmpty(selectedQuantity) ||isEmpty(selectedPrice)){
+            setStatus(status => ({visible:true,type:"error",message:"All fields are required"}))
+            return false;
+        } else {
+            setStatus(status => ({...status,visible:false}))
+            return true;
+        } 
+    };
 
+    const addThisItem = () => {
+        const postData = [
+            1234,shops[0].shopId,selectedCategory,selectedSubCategory,selectedItem,users[0].personId,selectedQuantity,selectedPrice,selectedMeasure,moment().format("yyyy-MM-DD HH:mm:ss")
+        ]
+        dispatch(addSpendings(postData));
+    };
+
+    const addAndClose = () => {
+        if (validateData()) {
+            addThisItem();
+            dispatch(addDialogClose())
+        }
     };
 
     React.useEffect(() => {
@@ -114,6 +135,7 @@ export default function AddItemDialog({ isOpen }) {
                         labelId="category-label"
                         id="category"
                         label="Category"
+                        value={selectedCategory}
                         onChange={onCategoryChange}
                     >
                         {categoryMenuItems}
@@ -125,6 +147,7 @@ export default function AddItemDialog({ isOpen }) {
                         labelId="subCategory-label"
                         id="subCategory"
                         label="Sub Category"
+                        value={selectedSubCategory}
                         onChange={onSubCategoryChange}
                     >
                         {subCategoryMenuItems}
@@ -136,6 +159,7 @@ export default function AddItemDialog({ isOpen }) {
                         labelId="items-label"
                         id="items"
                         label="Items"
+                        value={selectedItem}
                         onChange={(event)=> { setSelectedItem(event.target.value) }}
                     >
                         {itemsMenuItems}
@@ -150,6 +174,7 @@ export default function AddItemDialog({ isOpen }) {
                         labelId="quantity-type-label"
                         id="quantity-type"
                         label="Measurement"
+                        value={selectedMeasure}
                         onChange={(event)=> { setSelectedMeasure(event.target.value) }}
                     >
                         {measureMenuItems}

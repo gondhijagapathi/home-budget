@@ -1,11 +1,11 @@
-import { addCategories, addItems, addSubCategories, addMeasures } from '../store/mainDataSlice'
+import { addCategories, addItems, addSubCategories, addMeasures, addShops, addUsers } from '../store/mainDataSlice'
 import store from '../store/store';
 
 export function getCategories() {
     fetch("http://rest.jagapathi.me/categories", {
         method: 'GET',
     })
-      .then(res => {console.log(res); return res.text()})
+      .then(res => {return res.text()})
       .then(data => JSON.parse(data))
       .then(
         (result) => {
@@ -21,7 +21,7 @@ export function getSubCategories(id) {
     fetch("http://rest.jagapathi.me/subcategories/"+id, {
         method: 'GET',
     })
-      .then(res => {console.log(res); return res.text()})
+      .then(res => {return res.text()})
       .then(data => JSON.parse(data))
       .then(
         (result) => {
@@ -37,7 +37,7 @@ export function getItems(id) {
     fetch("http://rest.jagapathi.me/items/"+id, {
         method: 'GET',
     })
-      .then(res => {console.log(res); return res.text()})
+      .then(res => {return res.text()})
       .then(data => JSON.parse(data))
       .then(
         (result) => {
@@ -53,7 +53,7 @@ export function getMeasures() {
     fetch("http://rest.jagapathi.me/measures", {
         method: 'GET',
     })
-      .then(res => {console.log(res); return res.text()})
+      .then(res => {return res.text()})
       .then(data => JSON.parse(data))
       .then(
         (result) => {
@@ -63,6 +63,38 @@ export function getMeasures() {
             console.log("error from api"+error)
         }
       )
+}
+
+export function getShops() {
+  fetch("http://rest.jagapathi.me/shops", {
+      method: 'GET',
+  })
+    .then(res => {return res.text()})
+    .then(data => JSON.parse(data))
+    .then(
+      (result) => {
+        store.dispatch(addShops(result))
+      },
+      (error) => {
+          console.log("error from api"+error)
+      }
+    )
+}
+
+export function getUsers() {
+  fetch("http://rest.jagapathi.me/users", {
+      method: 'GET',
+  })
+    .then(res => {return res.text()})
+    .then(data => JSON.parse(data))
+    .then(
+      (result) => {
+        store.dispatch(addUsers(result))
+      },
+      (error) => {
+          console.log("error from api"+error)
+      }
+    )
 }
 
 export function postData(ext, data) {
