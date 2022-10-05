@@ -7,7 +7,7 @@ import SaveIcon from '@mui/icons-material/Save';
 import { Paper } from '@mui/material';
 import { addDialogOpen, clearSpendings } from './store/mainDataSlice';
 import { useDispatch, useSelector } from 'react-redux'
-import { postData } from './api/apiCaller';
+import { getRecentSpendings, postData } from './api/apiCaller';
 
 const actions = [
     { icon: <AddIcon />, name: 'Add', actionName: 'add' },
@@ -26,7 +26,8 @@ export default function AddItem() {
         if (action === 'save') {
             const res = await postData('spendings', spendings);
             if(res==='204'){
-                dispatch(clearSpendings())
+                dispatch(clearSpendings());
+                getRecentSpendings();
             }
         }
     }

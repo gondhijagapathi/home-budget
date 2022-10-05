@@ -1,4 +1,4 @@
-import { addCategories, addItems, addSubCategories, addMeasures, addShops, addUsers, addAllItems } from '../store/mainDataSlice'
+import { addCategories, addItems, addSubCategories, addMeasures, addShops, addUsers, addAllItems, addRecentSpendings } from '../store/mainDataSlice'
 import store from '../store/store';
 
 export function getCategories() {
@@ -10,6 +10,22 @@ export function getCategories() {
     .then(
       (result) => {
         store.dispatch(addCategories(result))
+      },
+      (error) => {
+        console.log("error from api" + error)
+      }
+    )
+}
+
+export function getRecentSpendings() {
+  fetch("http://rest.jagapathi.me/spendings", {
+    method: 'GET',
+  })
+    .then(res => { return res.text() })
+    .then(data => JSON.parse(data))
+    .then(
+      (result) => {
+        store.dispatch(addRecentSpendings(result))
       },
       (error) => {
         console.log("error from api" + error)
@@ -109,6 +125,21 @@ export async function postData(ext, data) {
     method: 'post',
     headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
     body: reqData,
+  })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      return "204"
+    })
+    .catch((error) => {
+      console.error(error);
+      return "500"
+    });
+}
+
+export async function deleteSpending(id) {
+  return fetch('http://rest.jagapathi.me/spendings/delete/' + id, {
+    method: 'post',
+    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
   })
     .then((response) => response.json())
     .then((responseJson) => {

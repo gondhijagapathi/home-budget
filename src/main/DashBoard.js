@@ -5,10 +5,12 @@ import ItemsList from './ItemsList';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import AddItemDialog from './AddItemDialog';
 import { useSelector } from 'react-redux'
-import { getCategories, getMeasures, getShops, getUsers, getItems } from './api/apiCaller';
+import { getCategories, getMeasures, getShops, getUsers, getItems, getRecentSpendings } from './api/apiCaller';
+import Recents from './Recents';
 
 function DashBoard() {
     const addDialogOpen = useSelector(state => state.mainData.addDialogOpen)
+    const tab = useSelector(state => state.mainData.tabView)
     const darkTheme = createTheme({
         palette: {
             mode: 'dark',
@@ -21,11 +23,12 @@ function DashBoard() {
         getShops();
         getUsers();
         getItems(0);
+        getRecentSpendings();
     }, []);
 
     return (
         <ThemeProvider theme={darkTheme}>
-            <ItemsList />
+            {tab === 'add' ? <ItemsList /> : <Recents />}
             <AddItem />
             <BottomNav />
             <AddItemDialog isOpen={addDialogOpen} />

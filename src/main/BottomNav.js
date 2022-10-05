@@ -4,20 +4,23 @@ import BottomNavigationAction from '@mui/material/BottomNavigationAction';
 import RestoreIcon from '@mui/icons-material/Restore';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import Paper from '@mui/material/Paper';
+import { useDispatch, useSelector } from 'react-redux';
+import { changeTab } from './store/mainDataSlice';
 
 function BottomNav() {
-    const [value, setValue] = React.useState('add');
+    const dispatch = useDispatch()
+    const tab = useSelector(state => state.mainData.tabView)
 
     return (
         <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
             <BottomNavigation
                 showLabels
-                value={value}
+                value={tab}
                 onChange={(event, newValue) => {
-                    setValue(newValue);
+                    dispatch(changeTab(newValue));
                 }}>
-                <BottomNavigationAction label="Add Items" value="add" icon={<AddCircleOutlineIcon />} />
-                <BottomNavigationAction label="Recently Added" value="recents" icon={<RestoreIcon />} />
+                <BottomNavigationAction label="Add" value="add" icon={<AddCircleOutlineIcon />} />
+                <BottomNavigationAction label="Recent" value="recents" icon={<RestoreIcon />} />
             </BottomNavigation></Paper>
     );
 }

@@ -12,6 +12,8 @@ export const mainDataSlice = createSlice({
     spendings: [],
     shops: [],
     users: [],
+    recentSpendings: [],
+    tabView: "add",
   },
   reducers: {
     addDialogOpen: state => {
@@ -19,6 +21,9 @@ export const mainDataSlice = createSlice({
     },
     addDialogClose: state => {
       state.addDialogOpen = false
+    },
+    changeTab: (state, action) => {
+      state.tabView = action.payload
     },
     addCategories: (state, action) => {
       state.categories = action.payload
@@ -34,6 +39,9 @@ export const mainDataSlice = createSlice({
     },
     addSpendings: (state, action) => {
       state.spendings = [...state.spendings, action.payload]
+    },
+    addRecentSpendings: (state, action) => {
+      state.recentSpendings = action.payload
     },
     clearSpendings: state => {
       state.spendings = []
@@ -55,6 +63,6 @@ export const mainDataSlice = createSlice({
 
 // Action creators are generated for each case reducer function
 export const { addDialogOpen, addDialogClose, addCategories, addItems, addSubCategories, addMeasures,
-  addSpendings, addShops, addUsers, clearSpendings, removeSpendings, addAllItems } = mainDataSlice.actions
+  addSpendings, addShops, addUsers, clearSpendings, removeSpendings, addAllItems, addRecentSpendings, changeTab } = mainDataSlice.actions
 
 export default mainDataSlice.reducer
