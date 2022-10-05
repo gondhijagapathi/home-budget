@@ -5,8 +5,9 @@ import SpeedDialAction from '@mui/material/SpeedDialAction';
 import AddIcon from '@mui/icons-material/Add';
 import SaveIcon from '@mui/icons-material/Save';
 import { Paper } from '@mui/material';
-import { addDialogOpen } from './store/mainDataSlice';
-import { useDispatch } from 'react-redux'
+import { addDialogOpen, clearSpendings } from './store/mainDataSlice';
+import { useDispatch, useSelector } from 'react-redux'
+import { postData } from './api/apiCaller';
 
 const actions = [
     { icon: <AddIcon />, name: 'Add', actionName: 'add' },
@@ -16,10 +17,17 @@ const actions = [
 export default function AddItem() {
 
     const dispatch = useDispatch()
+    const spendings = useSelector(state => state.mainData.spendings)
 
-    function navAction(action) {
+    async function navAction(action) {
         if (action === 'add') {
             dispatch(addDialogOpen())
+        }
+        if (action === 'save') {
+            const res = await postData('spendings', spendings);
+            if(res==='204'){
+                dispatch(clearSpendings())
+            }
         }
     }
 

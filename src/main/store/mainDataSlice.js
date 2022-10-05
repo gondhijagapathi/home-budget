@@ -32,9 +32,10 @@ export const mainDataSlice = createSlice({
         state.measures = action.payload
     },
     addSpendings: (state, action) => {
-      console.log("inside");
       state.spendings = [...state.spendings, action.payload]
-      console.log(state.spendings);
+    },
+    clearSpendings: state => {
+      state.spendings = []
     },
     addShops: (state, action) => {
       state.shops = action.payload
@@ -46,6 +47,6 @@ export const mainDataSlice = createSlice({
 })
 
 // Action creators are generated for each case reducer function
-export const { addDialogOpen, addDialogClose, addCategories, addItems, addSubCategories, addMeasures, addSpendings, addShops, addUsers } = mainDataSlice.actions
+export const { addDialogOpen, addDialogClose, addCategories, addItems, addSubCategories, addMeasures, addSpendings, addShops, addUsers, clearSpendings } = mainDataSlice.actions
 
 export default mainDataSlice.reducer

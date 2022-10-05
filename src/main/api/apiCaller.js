@@ -97,16 +97,21 @@ export function getUsers() {
     )
 }
 
-export function postData(ext, data) {
-  const res = fetch('http://rest.jagapathi.me/'+ext, {
+export async function postData(ext, data) {
+  const reqData = JSON.stringify({
+    data
+  })
+  return fetch('http://rest.jagapathi.me/'+ext, {
     method: 'post',
-    headers: { 'Content-Type': 'application/json' },
-    body: data,
+    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+    body: reqData,
    })
    .then((response) => response.json())
    .then((responseJson) => {
+    return "204"
    })
    .catch((error) => {
      console.error(error);
+     return "500"
    });
 }

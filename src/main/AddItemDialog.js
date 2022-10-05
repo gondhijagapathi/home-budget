@@ -16,6 +16,7 @@ import Alert from '@mui/material/Alert';
 import { useSelector } from 'react-redux'
 import { getItems, getSubCategories } from './api/apiCaller';
 import moment from 'moment/moment';
+import uuid from 'react-uuid'
 
 export default function AddItemDialog({ isOpen }) {
 
@@ -43,7 +44,7 @@ export default function AddItemDialog({ isOpen }) {
     })
 
     const handleClose = () => {
-        console.log(selectedCategory+" "+selectedSubCategory+" "+selectedMeasure+" "+selectedItem+" "+selectedQuantity+" "+selectedPrice)
+        clear();
         dispatch(addDialogClose())
     };
 
@@ -53,9 +54,18 @@ export default function AddItemDialog({ isOpen }) {
     const addAnother = () => {
         if (validateData()) {
             addThisItem();
+            clear();
         }
     };
 
+    const clear = () => {
+        setSelectedCategory("")
+        setSelectedSubCategory("")
+        setSelectedMeasure("")
+        setSelectedItem("")
+        setSelectedQuantity("")
+        setSelectedPrice("")
+    }
     const validateData = () => {
         if (isEmpty(selectedCategory) || isEmpty(selectedSubCategory) ||isEmpty(selectedMeasure) ||isEmpty(selectedItem) ||isEmpty(selectedQuantity) ||isEmpty(selectedPrice)){
             setStatus(status => ({visible:true,type:"error",message:"All fields are required"}))
@@ -68,7 +78,7 @@ export default function AddItemDialog({ isOpen }) {
 
     const addThisItem = () => {
         const postData = [
-            1234,shops[0].shopId,selectedCategory,selectedSubCategory,selectedItem,users[0].personId,selectedQuantity,selectedPrice,selectedMeasure,moment().format("yyyy-MM-DD HH:mm:ss")
+            uuid(),shops[0].shopId,selectedCategory,selectedSubCategory,selectedItem,users[0].personId,parseFloat(selectedQuantity),parseFloat(selectedPrice),selectedMeasure,moment().format("yyyy-MM-DD HH:mm:ss")
         ]
         dispatch(addSpendings(postData));
     };
@@ -76,6 +86,7 @@ export default function AddItemDialog({ isOpen }) {
     const addAndClose = () => {
         if (validateData()) {
             addThisItem();
+            clear();
             dispatch(addDialogClose())
         }
     };
@@ -166,7 +177,7 @@ export default function AddItemDialog({ isOpen }) {
                     </Select>
                 </FormControl>
                 <FormControl variant="standard" sx={{ m: 1, minWidth: '100%' }}>
-                    <TextField type={"number"} id="Qantity" label="Qantity" variant="standard" onChange={(event)=> { setSelectedQuantity(event.target.value) }}/>
+                    <TextField type={"number"} id="Qantity" label="Qantity" value={selectedQuantity} variant="standard" onChange={(event)=> { setSelectedQuantity(event.target.value) }}/>
                 </FormControl>
                 <FormControl variant="standard" sx={{ m: 1, minWidth: '100%' }}>
                     <InputLabel id="quantity-type-label">Measurement</InputLabel>
@@ -181,7 +192,7 @@ export default function AddItemDialog({ isOpen }) {
                     </Select>
                 </FormControl>
                 <FormControl variant="standard" sx={{ m: 1, minWidth: '100%' }}>
-                    <TextField type={"number"} id="Price" label="Price" variant="standard" onChange={(event)=> { setSelectedPrice(event.target.value) }}/>
+                    <TextField type={"number"} id="Price" label="Price" variant="standard" value={selectedPrice} onChange={(event)=> { setSelectedPrice(event.target.value) }}/>
                 </FormControl>
             </DialogContent>
             <DialogActions>
