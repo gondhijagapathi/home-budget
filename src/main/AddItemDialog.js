@@ -38,9 +38,9 @@ export default function AddItemDialog({ isOpen }) {
     const [selectedQuantity, setSelectedQuantity] = React.useState("")
     const [selectedPrice, setSelectedPrice] = React.useState("")
     const [status, setStatus] = React.useState({
-        message:"",
-        type:"error",
-        visible:false
+        message: "",
+        type: "error",
+        visible: false
     })
 
     const handleClose = () => {
@@ -67,18 +67,27 @@ export default function AddItemDialog({ isOpen }) {
         setSelectedPrice("")
     }
     const validateData = () => {
-        if (isEmpty(selectedCategory) || isEmpty(selectedSubCategory) ||isEmpty(selectedMeasure) ||isEmpty(selectedItem) ||isEmpty(selectedQuantity) ||isEmpty(selectedPrice)){
-            setStatus(status => ({visible:true,type:"error",message:"All fields are required"}))
+        if (isEmpty(selectedCategory) || isEmpty(selectedSubCategory) || isEmpty(selectedMeasure) || isEmpty(selectedItem) || isEmpty(selectedQuantity) || isEmpty(selectedPrice)) {
+            setStatus(status => ({ visible: true, type: "error", message: "All fields are required" }))
             return false;
         } else {
-            setStatus(status => ({...status,visible:false}))
+            setStatus(status => ({ ...status, visible: false }))
             return true;
-        } 
+        }
     };
 
     const addThisItem = () => {
         const postData = [
-            uuid(),shops[0].shopId,selectedCategory,selectedSubCategory,selectedItem,users[0].personId,parseFloat(selectedQuantity),parseFloat(selectedPrice),selectedMeasure,moment().format("yyyy-MM-DD HH:mm:ss")
+            uuid(),
+            shops[0].shopId,
+            selectedCategory,
+            selectedSubCategory,
+            selectedItem,
+            users[0].personId,
+            parseFloat(selectedQuantity),
+            parseFloat(selectedPrice),
+            selectedMeasure,
+            moment().format("yyyy-MM-DD HH:mm:ss"),
         ]
         dispatch(addSpendings(postData));
     };
@@ -171,13 +180,13 @@ export default function AddItemDialog({ isOpen }) {
                         id="items"
                         label="Items"
                         value={selectedItem}
-                        onChange={(event)=> { setSelectedItem(event.target.value) }}
+                        onChange={(event) => { setSelectedItem(event.target.value) }}
                     >
                         {itemsMenuItems}
                     </Select>
                 </FormControl>
                 <FormControl variant="standard" sx={{ m: 1, minWidth: '100%' }}>
-                    <TextField type={"number"} id="Qantity" label="Qantity" value={selectedQuantity} variant="standard" onChange={(event)=> { setSelectedQuantity(event.target.value) }}/>
+                    <TextField type={"number"} id="Qantity" label="Qantity" value={selectedQuantity} variant="standard" onChange={(event) => { setSelectedQuantity(event.target.value) }} />
                 </FormControl>
                 <FormControl variant="standard" sx={{ m: 1, minWidth: '100%' }}>
                     <InputLabel id="quantity-type-label">Measurement</InputLabel>
@@ -186,13 +195,13 @@ export default function AddItemDialog({ isOpen }) {
                         id="quantity-type"
                         label="Measurement"
                         value={selectedMeasure}
-                        onChange={(event)=> { setSelectedMeasure(event.target.value) }}
+                        onChange={(event) => { setSelectedMeasure(event.target.value) }}
                     >
                         {measureMenuItems}
                     </Select>
                 </FormControl>
                 <FormControl variant="standard" sx={{ m: 1, minWidth: '100%' }}>
-                    <TextField type={"number"} id="Price" label="Price" variant="standard" value={selectedPrice} onChange={(event)=> { setSelectedPrice(event.target.value) }}/>
+                    <TextField type={"number"} id="Price" label="Price" variant="standard" value={selectedPrice} onChange={(event) => { setSelectedPrice(event.target.value) }} />
                 </FormControl>
             </DialogContent>
             <DialogActions>
