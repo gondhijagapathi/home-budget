@@ -7,6 +7,8 @@ import AddItemDialog from './AddItemDialog';
 import { useSelector } from 'react-redux'
 import { getCategories, getMeasures, getShops, getUsers, getItems, getRecentSpendings } from './api/apiCaller';
 import Recents from './Recents';
+import EditDatabase from './EditDatabase';
+import AlertSnack from './AlertSnack';
 
 function DashBoard() {
     const addDialogOpen = useSelector(state => state.mainData.addDialogOpen)
@@ -28,10 +30,11 @@ function DashBoard() {
 
     return (
         <ThemeProvider theme={darkTheme}>
-            {tab === 'add' ? <ItemsList /> : <Recents />}
-            <AddItem />
+            {tab === 'add' ? <ItemsList /> : tab === 'edit' ? <EditDatabase /> : <Recents />}
+            <AddItem visible={tab === 'add'} />
             <BottomNav />
             <AddItemDialog isOpen={addDialogOpen} />
+            <AlertSnack />
         </ThemeProvider>
     );
 }

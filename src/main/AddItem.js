@@ -14,7 +14,7 @@ const actions = [
     { icon: <SaveIcon />, name: 'Save', actionName: 'save' }
 ];
 
-export default function AddItem() {
+export default function AddItem({visible}) {
 
     const dispatch = useDispatch()
     const spendings = useSelector(state => state.mainData.spendings)
@@ -31,6 +31,8 @@ export default function AddItem() {
             }
         }
     }
+
+    if(!visible) return;
 
     return (
         <>

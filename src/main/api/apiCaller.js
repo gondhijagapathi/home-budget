@@ -1,4 +1,4 @@
-import { addCategories, addItems, addSubCategories, addMeasures, addShops, addUsers, addAllItems, addRecentSpendings } from '../store/mainDataSlice'
+import { addCategories, addItems, addSubCategories, addMeasures, addShops, addUsers, addAllItems, addRecentSpendings, addAllSubCategories } from '../store/mainDataSlice'
 import store from '../store/store';
 
 export function getCategories() {
@@ -41,7 +41,11 @@ export function getSubCategories(id) {
     .then(data => JSON.parse(data))
     .then(
       (result) => {
-        store.dispatch(addSubCategories(result))
+        if (id === 0) {
+          store.dispatch(addAllSubCategories(result))
+        } else {
+          store.dispatch(addSubCategories(result))
+        }
       },
       (error) => {
         console.log("error from api" + error)
@@ -117,10 +121,13 @@ export function getUsers() {
     )
 }
 
-export async function postData(ext, data) {
-  const reqData = JSON.stringify({
+export async function postData(ext, data, edit = false) {
+  var reqData = JSON.stringify({
     data
   })
+  if (edit) {
+    reqData = JSON.stringify(data)
+  }
   return fetch('http://rest.jagapathi.me/' + ext, {
     method: 'post',
     headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },

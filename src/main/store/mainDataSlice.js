@@ -6,6 +6,7 @@ export const mainDataSlice = createSlice({
     addDialogOpen: false,
     categories: [],
     subCategories: [],
+    allSubCategories: [],
     items: [],
     allItems: [],
     measures: [],
@@ -14,6 +15,11 @@ export const mainDataSlice = createSlice({
     users: [],
     recentSpendings: [],
     tabView: "add",
+    alert: {
+      open: false,
+      message: "",
+      type: "",
+    },
   },
   reducers: {
     addDialogOpen: state => {
@@ -30,6 +36,9 @@ export const mainDataSlice = createSlice({
     },
     addSubCategories: (state, action) => {
       state.subCategories = action.payload
+    },
+    addAllSubCategories: (state, action) => {
+      state.allSubCategories = action.payload
     },
     addItems: (state, action) => {
       state.items = action.payload
@@ -58,11 +67,16 @@ export const mainDataSlice = createSlice({
     addAllItems: (state, action) => {
       state.allItems = action.payload
     },
+    addAlert: (state, action) => {
+      state.alert.open = action.payload.open
+      state.alert.message = action.payload.message;
+      state.alert.type = action.payload.type;
+    },
   }
 })
 
 // Action creators are generated for each case reducer function
 export const { addDialogOpen, addDialogClose, addCategories, addItems, addSubCategories, addMeasures,
-  addSpendings, addShops, addUsers, clearSpendings, removeSpendings, addAllItems, addRecentSpendings, changeTab } = mainDataSlice.actions
+  addSpendings, addShops, addUsers, clearSpendings, removeSpendings, addAllItems, addRecentSpendings, changeTab, addAllSubCategories, addAlert } = mainDataSlice.actions
 
 export default mainDataSlice.reducer

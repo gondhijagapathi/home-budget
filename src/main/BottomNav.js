@@ -3,6 +3,7 @@ import BottomNavigation from '@mui/material/BottomNavigation';
 import BottomNavigationAction from '@mui/material/BottomNavigationAction';
 import RestoreIcon from '@mui/icons-material/Restore';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import StorageIcon from '@mui/icons-material/Storage';
 import Paper from '@mui/material/Paper';
 import { useDispatch, useSelector } from 'react-redux';
 import { changeTab } from './store/mainDataSlice';
@@ -21,6 +22,7 @@ function BottomNav() {
                 }}>
                 <BottomNavigationAction label="Add" value="add" icon={<AddCircleOutlineIcon />} />
                 <BottomNavigationAction label="Recent" value="recents" icon={<RestoreIcon />} />
+                <BottomNavigationAction label="Database" value="edit" icon={<StorageIcon />} />
             </BottomNavigation></Paper>
     );
 }
