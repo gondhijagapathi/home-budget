@@ -1,4 +1,4 @@
-import { addCategories, addItems, addSubCategories, addMeasures, addShops, addUsers, addAllItems, addRecentSpendings, addAllSubCategories } from '../store/mainDataSlice'
+import { addCategories, addSubCategories, addUsers, addRecentSpendings, addAllSubCategories } from '../store/mainDataSlice'
 import store from '../store/store';
 
 export function getCategories() {
@@ -46,58 +46,6 @@ export function getSubCategories(id) {
         } else {
           store.dispatch(addSubCategories(result))
         }
-      },
-      (error) => {
-        console.log("error from api" + error)
-      }
-    )
-}
-
-export function getItems(id) {
-  fetch("http://rest.jagapathi.me/items/" + id, {
-    method: 'GET',
-  })
-    .then(res => { return res.text() })
-    .then(data => JSON.parse(data))
-    .then(
-      (result) => {
-        if (id === 0) {
-          store.dispatch(addAllItems(result))
-        } else {
-          store.dispatch(addItems(result))
-        }
-      },
-      (error) => {
-        console.log("error from api" + error)
-      }
-    )
-}
-
-export function getMeasures() {
-  fetch("http://rest.jagapathi.me/measures", {
-    method: 'GET',
-  })
-    .then(res => { return res.text() })
-    .then(data => JSON.parse(data))
-    .then(
-      (result) => {
-        store.dispatch(addMeasures(result))
-      },
-      (error) => {
-        console.log("error from api" + error)
-      }
-    )
-}
-
-export function getShops() {
-  fetch("http://rest.jagapathi.me/shops", {
-    method: 'GET',
-  })
-    .then(res => { return res.text() })
-    .then(data => JSON.parse(data))
-    .then(
-      (result) => {
-        store.dispatch(addShops(result))
       },
       (error) => {
         console.log("error from api" + error)

@@ -5,7 +5,6 @@ import Divider from '@mui/material/Divider';
 import ListItemText from '@mui/material/ListItemText';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
 import Avatar from '@mui/material/Avatar';
-import ScaleIcon from '@mui/icons-material/Scale';
 import DeleteIcon from '@mui/icons-material/Delete'
 import DateRangeIcon from '@mui/icons-material/DateRange';
 import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
@@ -15,7 +14,7 @@ import { Stack } from '@mui/system';
 import { deleteSpending, getRecentSpendings } from './api/apiCaller';
 
 
-function RecentItemView({ spend, itemName, measure }) {
+function RecentItemView({ spend, itemName }) {
     async function deleteSpend(id) {
         const res = await deleteSpending(id);
         if (res === '204') {
@@ -43,12 +42,6 @@ function RecentItemView({ spend, itemName, measure }) {
                             <Grid container sx={{ marginTop: '3px' }} spacing={2}>
                                 <Grid item>
                                     <Stack direction="row" alignItems="center" gap={1}>
-                                        <ScaleIcon />
-                                        <Typography variant="body1">{spend.quantity + " " + measure}</Typography>
-                                    </Stack>
-                                </Grid>
-                                <Grid item>
-                                    <Stack direction="row" alignItems="center" gap={1}>
                                         <CurrencyRupeeIcon />
                                         <Typography variant="body1">{spend.amount}</Typography>
                                     </Stack>
@@ -72,16 +65,11 @@ function Recents() {
     const [listOfItems, addListOfItems] = React.useState([])
 
     const recentSpendings = useSelector(state => state.mainData.recentSpendings)
-    const measures = useSelector(state => state.mainData.measures)
-
-    const findMeasureName = (id) => {
-        return measures.find(measure => measure.measureId === id)?.measure
-    };
 
     React.useEffect(() => {
         var list = [];
         recentSpendings.forEach((spend) => {
-            list = [...list, <RecentItemView spend={spend} itemName={spend.itemName} measure={findMeasureName(spend.measureId)} />]
+            list = [...list, <RecentItemView spend={spend} itemName={spend.subCategoryName} />]
         });
         addListOfItems(list)
         // eslint-disable-next-line

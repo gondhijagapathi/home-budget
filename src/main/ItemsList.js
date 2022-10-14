@@ -5,7 +5,6 @@ import Divider from '@mui/material/Divider';
 import ListItemText from '@mui/material/ListItemText';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
 import Avatar from '@mui/material/Avatar';
-import ScaleIcon from '@mui/icons-material/Scale';
 import DeleteIcon from '@mui/icons-material/Delete'
 import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
 import { useSelector } from 'react-redux';
@@ -14,7 +13,7 @@ import { Grid, IconButton, Typography } from '@mui/material';
 import { Stack } from '@mui/system';
 import { useDispatch } from 'react-redux'
 
-function ItemView({ spend, itemName, measure }) {
+function ItemView({ spend, itemName }) {
     const dispatch = useDispatch()
     return (
         <>
@@ -36,14 +35,8 @@ function ItemView({ spend, itemName, measure }) {
                             <Grid container sx={{ marginTop: '3px' }} spacing={2}>
                                 <Grid item>
                                     <Stack direction="row" alignItems="center" gap={1}>
-                                        <ScaleIcon />
-                                        <Typography variant="body1">{spend[6] + " " + measure}</Typography>
-                                    </Stack>
-                                </Grid>
-                                <Grid item>
-                                    <Stack direction="row" alignItems="center" gap={1}>
                                         <CurrencyRupeeIcon />
-                                        <Typography variant="body1">{spend[7]}</Typography>
+                                        <Typography variant="body1">{spend[4]}</Typography>
                                     </Stack>
                                 </Grid>
                             </Grid>
@@ -57,22 +50,17 @@ function ItemView({ spend, itemName, measure }) {
 
 export default function ItemsList() {
     const [listOfItems, addListOfItems] = React.useState([])
+    const allSubCategories = useSelector(state => state.mainData.allSubCategories)
     const spendings = useSelector(state => state.mainData.spendings)
-    const allItems = useSelector(state => state.mainData.allItems)
-    const measures = useSelector(state => state.mainData.measures)
 
     const findItemName = (id) => {
-        return allItems.find(item => item.itemId === id)?.itemName
-    };
-
-    const findMeasureName = (id) => {
-        return measures.find(measure => measure.measureId === id)?.measure
+        return allSubCategories.find(cat => cat.subCategoryId === id)?.subCategoryName
     };
 
     React.useEffect(() => {
         var list = [];
         spendings.forEach((spend) => {
-            list = [...list, <ItemView spend={spend} itemName={findItemName(spend[4])} measure={findMeasureName(spend[8])} />]
+            list = [...list, <ItemView spend={spend} itemName={findItemName(spend[2])} />]
         });
         addListOfItems(list)
         // eslint-disable-next-line

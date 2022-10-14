@@ -5,7 +5,7 @@ import ItemsList from './ItemsList';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import AddItemDialog from './AddItemDialog';
 import { useSelector } from 'react-redux'
-import { getCategories, getMeasures, getShops, getUsers, getItems, getRecentSpendings } from './api/apiCaller';
+import { getCategories, getUsers, getRecentSpendings, getSubCategories } from './api/apiCaller';
 import Recents from './Recents';
 import EditDatabase from './EditDatabase';
 import AlertSnack from './AlertSnack';
@@ -21,10 +21,8 @@ function DashBoard() {
 
     React.useEffect(() => {
         getCategories();
-        getMeasures();
-        getShops();
+        getSubCategories(0);
         getUsers();
-        getItems(0);
         getRecentSpendings();
     }, []);
 

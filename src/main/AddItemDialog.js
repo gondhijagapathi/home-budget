@@ -14,7 +14,7 @@ import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
 import Alert from '@mui/material/Alert';
 import { useSelector } from 'react-redux'
-import { getItems, getSubCategories } from './api/apiCaller';
+import { getSubCategories } from './api/apiCaller';
 import moment from 'moment/moment';
 import uuid from 'react-uuid'
 
@@ -22,20 +22,14 @@ export default function AddItemDialog({ isOpen }) {
 
     const dispatch = useDispatch()
     const categories = useSelector(state => state.mainData.categories)
-    const shops = useSelector(state => state.mainData.shops)
     const users = useSelector(state => state.mainData.users)
     const [categoryMenuItems, setCategoryMenuItems] = React.useState([])
-    const measures = useSelector(state => state.mainData.measures)
-    const [measureMenuItems, setMeasureMenuItems] = React.useState([])
+    const [userItems, setUserItems] = React.useState([])
     const subCategories = useSelector(state => state.mainData.subCategories)
     const [subCategoryMenuItems, setSubCategoryMenuItems] = React.useState([])
-    const items = useSelector(state => state.mainData.items)
-    const [itemsMenuItems, setItemsMenuItems] = React.useState([])
+    const [selectedUser, setSelectedUser] = React.useState("")
     const [selectedCategory, setSelectedCategory] = React.useState("")
     const [selectedSubCategory, setSelectedSubCategory] = React.useState("")
-    const [selectedMeasure, setSelectedMeasure] = React.useState("")
-    const [selectedItem, setSelectedItem] = React.useState("")
-    const [selectedQuantity, setSelectedQuantity] = React.useState("")
     const [selectedPrice, setSelectedPrice] = React.useState("")
     const [status, setStatus] = React.useState({
         message: "",
@@ -61,13 +55,11 @@ export default function AddItemDialog({ isOpen }) {
     const clear = () => {
         setSelectedCategory("")
         setSelectedSubCategory("")
-        setSelectedMeasure("")
-        setSelectedItem("")
-        setSelectedQuantity("")
         setSelectedPrice("")
     }
+
     const validateData = () => {
-        if (isEmpty(selectedCategory) || isEmpty(selectedSubCategory) || isEmpty(selectedMeasure) || isEmpty(selectedItem) || isEmpty(selectedQuantity) || isEmpty(selectedPrice)) {
+        if (isEmpty(selectedCategory) || isEmpty(selectedSubCategory) || isEmpty(selectedPrice)) {
             setStatus(status => ({ visible: true, type: "error", message: "All fields are required" }))
             return false;
         } else {
@@ -79,14 +71,10 @@ export default function AddItemDialog({ isOpen }) {
     const addThisItem = () => {
         const postData = [
             uuid(),
-            shops[0].shopId,
             selectedCategory,
             selectedSubCategory,
-            selectedItem,
-            users[0].personId,
-            parseFloat(selectedQuantity),
+            selectedUser,
             parseFloat(selectedPrice),
-            selectedMeasure,
             moment().format("yyyy-MM-DD HH:mm:ss"),
         ]
         dispatch(addSpendings(postData));
@@ -101,44 +89,37 @@ export default function AddItemDialog({ isOpen }) {
     };
 
     React.useEffect(() => {
+        users.forEach((user) => {
+            setUserItems(userItems => [...userItems, <MenuItem key={user.personId} value={user.personId}>{user.userName}</MenuItem>])
+        })
+    }, [users]);
+
+    React.useEffect(() => {
         setCategoryMenuItems([])
         setSubCategoryMenuItems([])
-        setItemsMenuItems([])
         categories.forEach((cat) => {
             setCategoryMenuItems(categoryMenuItems => [...categoryMenuItems, <MenuItem key={cat.categoryId} value={cat.categoryId}>{cat.categoryName}</MenuItem>])
         })
     }, [categories]);
 
     React.useEffect(() => {
-        setMeasureMenuItems([])
-        measures.forEach((mes) => {
-            setMeasureMenuItems(measureMenuItems => [...measureMenuItems, <MenuItem key={mes.measureId} value={mes.measureId}>{mes.measure}</MenuItem>])
-        })
-    }, [measures]);
-
-    React.useEffect(() => {
         setSubCategoryMenuItems([])
-        setItemsMenuItems([])
         subCategories.forEach((sub) => {
             setSubCategoryMenuItems(subCategoryMenuItems => [...subCategoryMenuItems, <MenuItem key={sub.subCategoryId} value={sub.subCategoryId}>{sub.subCategoryName}</MenuItem>])
         })
     }, [subCategories]);
-
-    React.useEffect(() => {
-        setItemsMenuItems([])
-        items.forEach((it) => {
-            setItemsMenuItems(itemsMenuItems => [...itemsMenuItems, <MenuItem key={it.itemId} value={it.itemId}>{it.itemName}</MenuItem>])
-        })
-    }, [items]);
 
     function onCategoryChange(event) {
         setSelectedCategory(event.target.value)
         getSubCategories(event.target.value)
     }
 
+    function onUserChange(event) {
+        setSelectedUser(event.target.value)
+    }
+
     function onSubCategoryChange(event) {
         setSelectedSubCategory(event.target.value)
-        getItems(event.target.value)
     }
 
     return (
@@ -149,6 +130,18 @@ export default function AddItemDialog({ isOpen }) {
                     Please Add Items Properly, so that budget for this house can be calculated
                 </DialogContentText>
                 {status.visible && <Alert severity={status.type}>{status.message}</Alert>}
+                <FormControl variant="standard" sx={{ m: 1, minWidth: '100%' }}>
+                    <InputLabel id="users-label">Users</InputLabel>
+                    <Select
+                        labelId="users-label"
+                        id="users"
+                        label="Users"
+                        value={selectedUser}
+                        onChange={onUserChange}
+                    >
+                        {userItems}
+                    </Select>
+                </FormControl>
                 <FormControl variant="standard" sx={{ m: 1, minWidth: '100%' }}>
                     <InputLabel id="category-label">Category</InputLabel>
                     <Select
@@ -174,34 +167,7 @@ export default function AddItemDialog({ isOpen }) {
                     </Select>
                 </FormControl>
                 <FormControl variant="standard" sx={{ m: 1, minWidth: '100%' }}>
-                    <InputLabel id="items-label">Items</InputLabel>
-                    <Select
-                        labelId="items-label"
-                        id="items"
-                        label="Items"
-                        value={selectedItem}
-                        onChange={(event) => { setSelectedItem(event.target.value) }}
-                    >
-                        {itemsMenuItems}
-                    </Select>
-                </FormControl>
-                <FormControl variant="standard" sx={{ m: 1, minWidth: '100%' }}>
-                    <TextField type={"number"} id="Qantity" label="Qantity" value={selectedQuantity} variant="standard" onChange={(event) => { setSelectedQuantity(event.target.value) }} />
-                </FormControl>
-                <FormControl variant="standard" sx={{ m: 1, minWidth: '100%' }}>
-                    <InputLabel id="quantity-type-label">Measurement</InputLabel>
-                    <Select
-                        labelId="quantity-type-label"
-                        id="quantity-type"
-                        label="Measurement"
-                        value={selectedMeasure}
-                        onChange={(event) => { setSelectedMeasure(event.target.value) }}
-                    >
-                        {measureMenuItems}
-                    </Select>
-                </FormControl>
-                <FormControl variant="standard" sx={{ m: 1, minWidth: '100%' }}>
-                    <TextField type={"number"} id="Price" label="Price" variant="standard" value={selectedPrice} onChange={(event) => { setSelectedPrice(event.target.value) }} />
+                    <TextField type={"number"} id="Amount" label="Amount" variant="standard" value={selectedPrice} onChange={(event) => { setSelectedPrice(event.target.value) }} />
                 </FormControl>
             </DialogContent>
             <DialogActions>
