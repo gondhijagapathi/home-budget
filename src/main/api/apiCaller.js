@@ -2,7 +2,7 @@ import { addCategories, addSubCategories, addUsers, addRecentSpendings, addAllSu
 import store from '../store/store';
 
 export function getCategories() {
-  fetch("http://rest.jagapathi.me/categories", {
+  fetch("http://192.168.0.2:8083/categories", {
     method: 'GET',
   })
     .then(res => { return res.text() })
@@ -18,7 +18,7 @@ export function getCategories() {
 }
 
 export function getRecentSpendings() {
-  fetch("http://rest.jagapathi.me/spendings", {
+  fetch("http://192.168.0.2:8083/spendings", {
     method: 'GET',
   })
     .then(res => { return res.text() })
@@ -34,7 +34,7 @@ export function getRecentSpendings() {
 }
 
 export function getSubCategories(id) {
-  fetch("http://rest.jagapathi.me/subcategories/" + id, {
+  fetch("http://192.168.0.2:8083/subcategories/" + id, {
     method: 'GET',
   })
     .then(res => { return res.text() })
@@ -54,7 +54,7 @@ export function getSubCategories(id) {
 }
 
 export function getUsers() {
-  fetch("http://rest.jagapathi.me/users", {
+  fetch("http://192.168.0.2:8083/users", {
     method: 'GET',
   })
     .then(res => { return res.text() })
@@ -76,7 +76,7 @@ export async function postData(ext, data, edit = false) {
   if (edit) {
     reqData = JSON.stringify(data)
   }
-  return fetch('http://rest.jagapathi.me/' + ext, {
+  return fetch('http://192.168.0.2:8083/' + ext, {
     method: 'post',
     headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
     body: reqData,
@@ -92,7 +92,7 @@ export async function postData(ext, data, edit = false) {
 }
 
 export async function deleteSpending(id) {
-  return fetch('http://rest.jagapathi.me/spendings/delete/' + id, {
+  return fetch('http://192.168.0.2:8083/spendings/delete/' + id, {
     method: 'post',
     headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
   })
