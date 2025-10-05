@@ -3,16 +3,19 @@
 # --- STAGE 1: REACT FRONTEND BUILD ---
     FROM node:18-alpine AS frontend-build
 
-    # Set work directory for the frontend (assuming it's in a 'client' or 'frontend' folder)
-    WORKDIR /app/client 
+    # The work directory is the root of the app, since React files are here.
+    WORKDIR /app
     
-    # Copy and install frontend dependencies
-    # NOTE: Adjust 'client' to your actual frontend folder name (e.g., 'frontend')
-    COPY client/package*.json ./
+    # 1. Copy package.json (contains React/build dependencies) and install
+    COPY package*.json ./
     RUN npm install
     
-    # Copy source code and build
-    COPY client/ . /app/client/
+    # 2. Copy the source code needed for the React build
+    # The 'public' and 'src' folders are at the root level of your project.
+    COPY public/ ./public
+    COPY src/ ./src
+    
+    # Run the React build script
     RUN npm run build
     
     
@@ -20,22 +23,24 @@
     # --- STAGE 2: EXPRESS BACKEND & FINAL ---
     FROM node:18-alpine AS final
     
+    # Set the application root
     WORKDIR /app
     
-    # Copy and install backend dependencies 
-    # NOTE: This assumes a single package.json for backend in the project root.
+    # 1. Copy package.json (needed for installing production dependencies if any)
     COPY package*.json ./ 
-    RUN npm install 
+    RUN npm install --only=production
+    # OR, if you need all dev dependencies for some reason:
+    # RUN npm install 
     
-    # Copy backend source files
+    # 2. Copy backend source files
     COPY server.js ./
     COPY models/ ./models/
     COPY controllers/ ./controllers/
     COPY routes/ ./routes/
     
-    # Copy the built React app from the frontend stage
-    # NOTE: Adjust the path if your frontend build output is not 'build'
-    COPY --from=frontend-build /app/client/build ./build 
+    # 3. Copy the built React app from the frontend stage
+    # The built files are at /app/build in the previous stage
+    COPY --from=frontend-build /app/build ./build 
     
     # The port Express listens on
     EXPOSE 8083
