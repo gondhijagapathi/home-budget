@@ -76,7 +76,7 @@ export async function postData(ext, data, edit = false) {
   if (edit) {
     reqData = JSON.stringify(data)
   }
-  return fetch('/api' + ext, {
+  return fetch('/api/' + ext, {
     method: 'post',
     headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
     body: reqData,
