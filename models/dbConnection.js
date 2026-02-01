@@ -1,11 +1,12 @@
+require('dotenv').config();
 var mysql = require('mysql');
 
 var pool = mysql.createPool({
-    host     : '192.168.0.3', //always use IP address
-    user     : 'root',
-    password : 'jagapathi',
-    database : 'homedb',
-    port     : 3307 // Standard MySQL port
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_DATABASE,
+    port: process.env.DB_PORT
 });
 
 module.exports = {

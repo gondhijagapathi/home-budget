@@ -2,246 +2,90 @@
 var db = require('../models/dbConnection'); 
 
 //create class
-var Strain = {
+var HomeBudgetController = {
 
 //function to query all items
 getAllSpendings: function (req, res) {
-
-    var results = db.query('SELECT * from spendings LEFT JOIN subCategory on spendings.subCategoryId = subCategory.subCategoryId ORDER BY spendings.dateOfSpending DESC LIMIT 10', function (error, results, fields) {
-        //if error, print blank results
-        if (error) {
-            var apiResult = {};
-            apiResult= [];
-            res.json(apiResult);
-        }
-        
-        //make results 
-        var resultJson = JSON.stringify(results);
-        resultJson = JSON.parse(resultJson);
-        var apiResult = {};
-        
-        //add our JSON results to the data table
-        apiResult = resultJson;
-        
-        //send JSON to Express
-        res.json(apiResult);
+    const query = 'SELECT * from spendings LEFT JOIN subCategory on spendings.subCategoryId = subCategory.subCategoryId ORDER BY spendings.dateOfSpending DESC LIMIT 10';
+    db.query(query, (error, results) => {
+      handleResponse(res, error, results);
     });
 },
 
 //function to query all items
 deleteSpendings: function (req, res) {
-    let id = req.params.id;
-    let query = 'DELETE from spendings where spendingId = ?';
-
-    var results = db.query(query, 
-    [id] 
-    ,function (error, results, fields) {
-        //if error, print blank results
-        if (error) {
-            var apiResult = {};
-            apiResult= {'error':error};
-            res.status(500);
-            res.json(apiResult);
-        }
-        
-        //make results 
-        var resultJson = JSON.stringify(results);
-        resultJson = JSON.parse(resultJson);
-        var apiResult = {};
-        
-        //add our JSON results to the data table
-        apiResult = resultJson;
-        
-        //send JSON to Express
-        res.json(apiResult);
+    const { id } = req.params;
+    const query = 'DELETE from spendings where spendingId = ?';
+    db.query(query, [id], (error, results) => {
+      handleResponse(res, error, results);
     });
 },
 
 //function to query all items
 getAllUsers: function (req, res) {
-
-    var results = db.query('SELECT * from users', function (error, results, fields) {
-        //if error, print blank results
-        if (error) {
-            var apiResult = {};
-            apiResult= [];
-            res.json(apiResult);
-        }
-        
-        //make results 
-        var resultJson = JSON.stringify(results);
-        resultJson = JSON.parse(resultJson);
-        var apiResult = {};
-        
-        //add our JSON results to the data table
-        apiResult = resultJson;
-        
-        //send JSON to Express
-        res.json(apiResult);
+    const query = 'SELECT * from users';
+    db.query(query, (error, results) => {
+      handleResponse(res, error, results);
     });
 },
 
 getAllCategories: function (req, res) {
-
-    var results = db.query('SELECT * from category ORDER BY categoryName', function (error, results, fields) {
-        //if error, print blank results
-        if (error) {
-            var apiResult = {};
-            apiResult= [];
-            res.json(apiResult);
-        }
-        
-        //make results 
-        var resultJson = JSON.stringify(results);
-        resultJson = JSON.parse(resultJson);
-        var apiResult = {};
-        
-        //add our JSON results to the data table
-        apiResult = resultJson;
-        
-        //send JSON to Express
-        res.json(apiResult);
+    const query = 'SELECT * from category ORDER BY categoryName';
+    db.query(query, (error, results) => {
+      handleResponse(res, error, results);
     });
 },
 getAllSubCategories: function (req, res) {
-    let id = req.params.id;
+    const { id } = req.params;
     let query = 'SELECT * from subCategory ORDER BY subCategoryName';
-
-    if(id != "0")
-    {
-        query='SELECT * from subCategory WHERE categoryId = ? ORDER BY subCategoryName';
+    let params = [];
+    if (id !== '0') {
+      query = 'SELECT * from subCategory WHERE categoryId = ? ORDER BY subCategoryName';
+      params.push(id);
     }
-    var results = db.query(query, 
-    [id] 
-    ,function (error, results, fields) {
-        //if error, print blank results
-        if (error) {
-            var apiResult = {};
-            apiResult= [];
-            res.json(apiResult);
-        }
-        
-        //make results 
-        var resultJson = JSON.stringify(results);
-        resultJson = JSON.parse(resultJson);
-        var apiResult = {};
-        
-        //add our JSON results to the data table
-        apiResult = resultJson;
-        
-        //send JSON to Express
-        res.json(apiResult);
+    db.query(query, params, (error, results) => {
+      handleResponse(res, error, results);
     });
 },
-postCategories: function (req, res) {
+const { v4: uuidv4 } = require('uuid');
 
-    let jsonBody = req.body;
-    var results = db.query(`INSERT INTO category VALUES (?, ?)`, 
-    [
-        '1234',
-        jsonBody.categoryName
-    ], function (error, results, fields) {
-        //if error, print blank results
-        if (error) {
-            var apiResult = {};
-            apiResult= {'error':error};
-            res.status(500);
-            res.json(apiResult);
-        }
-        
-        //make results 
-        var resultJson = JSON.stringify(results);
-        resultJson = JSON.parse(resultJson);
-        var apiResult = {};
-        
-        //add our JSON results to the data table
-        apiResult = resultJson;
-        
-        //send JSON to Express
-        res.json(apiResult);
+postCategories: function (req, res) {
+    const { categoryName } = req.body;
+    const categoryId = uuidv4();
+    const query = 'INSERT INTO category (categoryId, categoryName) VALUES (?, ?)';
+    db.query(query, [categoryId, categoryName], (error, results) => {
+      handleResponse(res, error, results);
     });
 },
 postUsers: function (req, res) {
-
-    let jsonBody = req.body;
-    var results = db.query(`INSERT INTO users VALUES (?, ?, ?, ?)`, 
-    [
-        '1234',
-        jsonBody.userName,
-        '1234',
-        new Date()
-    ], function (error, results, fields) {
-        //if error, print blank results
-        if (error) {
-            var apiResult = {};
-            apiResult= {'error':error};
-            res.status(500);
-            res.json(apiResult);
-        }
-        
-        //make results 
-        var resultJson = JSON.stringify(results);
-        resultJson = JSON.parse(resultJson);
-        var apiResult = {};
-        
-        //add our JSON results to the data table
-        apiResult = resultJson;
-        
-        //send JSON to Express
-        res.json(apiResult);
+    const { userName } = req.body;
+    const userId = uuidv4();
+    const query = 'INSERT INTO users (userId, userName, creationDate) VALUES (?, ?, ?)';
+    db.query(query, [userId, userName, new Date()], (error, results) => {
+      handleResponse(res, error, results);
     });
 },
 postSubCategories: function (req, res) {
-
-    let jsonBody = req.body;
-    var results = db.query(`INSERT INTO subCategory VALUES (?, ?, ?)`, 
-    [
-        '1234',
-        jsonBody.subCategoryName,
-        jsonBody.categoryId
-    ], function (error, results, fields) {
-        //if error, print blank results
-        if (error) {
-            var apiResult = {};
-            apiResult= {'error':error};
-            res.status(500);
-            res.json(apiResult);
-        }
-        
-        //make results 
-        var resultJson = JSON.stringify(results);
-        resultJson = JSON.parse(resultJson);
-        var apiResult = {};
-        
-        //add our JSON results to the data table
-        apiResult = resultJson;
-        
-        //send JSON to Express
-        res.json(apiResult);
+    const { subCategoryName, categoryId } = req.body;
+    const subCategoryId = uuidv4();
+    const query = 'INSERT INTO subCategory (subCategoryId, subCategoryName, categoryId) VALUES (?, ?, ?)';
+    db.query(query, [subCategoryId, subCategoryName, categoryId], (error, results) => {
+      handleResponse(res, error, results);
     });
 },
-postSpendings: function (req, res) {
+const handleResponse = (res, error, results) => {
+  if (error) {
+    res.status(500).json({ error: error });
+  } else {
+    res.json(results);
+  }
+};
 
-    let jsonBody = req.body;
-    var results = db.query(`INSERT INTO spendings VALUES ?`, [jsonBody.data], function (error, results, fields) {
-        //if error, print blank results
-        if (error) {
-            var apiResult = {};
-            apiResult= {'error':error};
-            res.status(500);
-            res.json(apiResult);
-        }
-        
-        //make results 
-        var resultJson = JSON.stringify(results);
-        resultJson = JSON.parse(resultJson);
-        var apiResult = {};
-        
-        //add our JSON results to the data table
-        apiResult = resultJson;
-        
-        //send JSON to Express
-        res.json(apiResult);
+postSpendings: function (req, res) {
+    const { data } = req.body;
+    const query = 'INSERT INTO spendings (spendingId, dateOfSpending, spendingName, subCategoryId, userId, amount) VALUES ?';
+    db.query(query, [data.map(item => [item.spendingId, item.dateOfSpending, item.spendingName, item.subCategoryId, item.userId, item.amount])], (error, results) => {
+      handleResponse(res, error, results);
     });
 },
 };
