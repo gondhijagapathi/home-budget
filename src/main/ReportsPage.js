@@ -52,7 +52,7 @@ const ReportsPage = () => {
             // Store original styles
             const exportButton = document.getElementById('export-button');
             const datePickerTrigger = document.getElementById('date-picker-range'); // The button inside DatePickerWithRange
-            
+
             let originalExportButtonDisplay = '';
             let originalDatePickerBorder = '';
 
@@ -127,7 +127,7 @@ const ReportsPage = () => {
                 try {
                     const data = await getSpendingsByDateRange(formattedStartDate, formattedEndDate);
                     setSpendings(data);
-                    
+
                     // Process data for chart
                     const categoryMap = {};
                     data.forEach(item => {
@@ -160,15 +160,17 @@ const ReportsPage = () => {
     }, [date, dataInvalidated, dispatch]); // Add dataInvalidated and dispatch to dependency array
     return (
         <div className="flex flex-col gap-4 relative" ref={reportRef}> {/* Assign ref to the main container */}
-            <div className="absolute top-0 left-0 z-10"> {/* Export button on the left */}
-                <Button id="export-button" onClick={handleExportImage} variant="outline" size="sm">
-                    <Camera className="mr-2 h-4 w-4" /> Export as Image
-                </Button>
+            <div className="flex justify-between items-center mb-4">
+                <div className="z-10"> {/* Export button on the left */}
+                    <Button id="export-button" onClick={handleExportImage} variant="outline" size="sm">
+                        <Camera className="mr-2 h-4 w-4" /> Export as Image
+                    </Button>
+                </div>
+                <div className="z-10"> {/* DatePicker on the right */}
+                    <DatePickerWithRange date={date} setDate={setDate} />
+                </div>
             </div>
-            <div className="absolute top-0 right-0 z-10"> {/* DatePicker on the right */}
-                <DatePickerWithRange date={date} setDate={setDate} />
-            </div>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-4 mt-16"> {/* Container for Total Spending Card, added mt-16 to push it down below datepicker */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-4"> {/* Container for Total Spending Card, removed mt-16 */}
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Total Spending</CardTitle>
