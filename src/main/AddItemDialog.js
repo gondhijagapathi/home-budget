@@ -1,180 +1,186 @@
 import * as React from 'react';
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
-import { addDialogClose, addSpendings } from './store/mainDataSlice';
-import { useDispatch } from 'react-redux'
-import InputLabel from '@mui/material/InputLabel';
-import MenuItem from '@mui/material/MenuItem';
-import FormControl from '@mui/material/FormControl';
-import Select from '@mui/material/Select';
-import Alert from '@mui/material/Alert';
-import { useSelector } from 'react-redux'
-import { getSubCategories } from './api/apiCaller';
-import moment from 'moment/moment';
-import uuid from 'react-uuid'
+import { DatePickerDemo } from "@/components/ui/date-picker";
+import { format } from "date-fns";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useDispatch, useSelector } from 'react-redux';
+import { postData, getRecentSpendings } from './api/apiCaller';
+import { addRecentSpendings } from './store/mainDataSlice';
+import { toast } from "sonner";
+import uuid from 'react-uuid';
 
-export default function AddItemDialog({ isOpen }) {
 
-    const dispatch = useDispatch()
-    const categories = useSelector(state => state.mainData.categories)
-    const users = useSelector(state => state.mainData.users)
-    const [categoryMenuItems, setCategoryMenuItems] = React.useState([])
-    const [userItems, setUserItems] = React.useState([])
-    const subCategories = useSelector(state => state.mainData.subCategories)
-    const [subCategoryMenuItems, setSubCategoryMenuItems] = React.useState([])
-    const [selectedUser, setSelectedUser] = React.useState("")
-    const [selectedCategory, setSelectedCategory] = React.useState("")
-    const [selectedSubCategory, setSelectedSubCategory] = React.useState("")
-    const [selectedPrice, setSelectedPrice] = React.useState("")
-    const [status, setStatus] = React.useState({
-        message: "",
-        type: "error",
-        visible: false
-    })
+export default function AddItemDialog() {
+    const dispatch = useDispatch();
+    const [open, setOpen] = React.useState(false);
+    const [selectedCategory, setSelectedCategory] = React.useState("");
+    const [selectedSubCategory, setSelectedSubCategory] = React.useState("");
+    const [amount, setAmount] = React.useState("");
+    const [selectedUser, setSelectedUser] = React.useState(null);
+    const [selectedDate, setSelectedDate] = React.useState(new Date());
 
-    const handleClose = () => {
-        clear();
-        dispatch(addDialogClose())
-    };
 
-    const isEmpty = (str) => {
-        return (!str || /^\s*$/.test(str));
-    }
-    const addAnother = () => {
-        if (validateData()) {
-            addThisItem();
-            clear();
+    const categories = useSelector(state => state.mainData.categories);
+    const allSubCategories = useSelector(state => state.mainData.allSubCategories);
+    const users = useSelector(state => state.mainData.users);
+
+    React.useEffect(() => {
+        if (users.length > 0 && selectedUser === null) {
+            setSelectedUser(users[0].personId);
         }
-    };
+    }, [users, selectedUser]);
 
-    const clear = () => {
-        setSelectedCategory("")
-        setSelectedSubCategory("")
-        setSelectedPrice("")
-    }
+    const filteredSubcategories = allSubCategories.filter(sc => sc.categoryId === selectedCategory);
 
-    const validateData = () => {
-        if (isEmpty(selectedCategory) || isEmpty(selectedSubCategory) || isEmpty(selectedPrice)) {
-            setStatus(status => ({ visible: true, type: "error", message: "All fields are required" }))
-            return false;
-        } else {
-            setStatus(status => ({ ...status, visible: false }))
-            return true;
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!selectedCategory || !selectedSubCategory || !amount || !selectedUser || !selectedDate) {
+            toast.error("Please fill out all required fields.");
+            return;
         }
-    };
 
-    const addThisItem = () => {
-        const postData = [
+        const data = [
             uuid(),
-            selectedCategory,
             selectedSubCategory,
             selectedUser,
-            parseFloat(selectedPrice),
-            moment().format("yyyy-MM-DD HH:mm:ss"),
-        ]
-        dispatch(addSpendings(postData));
-    };
+            parseFloat(amount),
+            format(selectedDate, "yyyy-MM-dd HH:mm:ss"),
+            selectedCategory,
+        ];
 
-    const addAndClose = () => {
-        if (validateData()) {
-            addThisItem();
-            clear();
-            dispatch(addDialogClose())
+        try {
+            await postData('spendings', { data });
+            toast.success("Item added successfully!");
+            
+            // Refresh recent spendings
+            const spendings = await getRecentSpendings();
+            dispatch(addRecentSpendings(spendings));
+            
+            // Reset form and close dialog
+            setSelectedCategory("");
+            setSelectedSubCategory("");
+            setAmount("");
+            setSelectedUser(null);
+            setOpen(false);
+        } catch (error) {
+            toast.error("Failed to add item.");
         }
     };
 
-    React.useEffect(() => {
-        users.forEach((user) => {
-            setUserItems(userItems => [...userItems, <MenuItem key={user.personId} value={user.personId}>{user.userName}</MenuItem>])
-        })
-    }, [users]);
-
-    React.useEffect(() => {
-        setCategoryMenuItems([])
-        setSubCategoryMenuItems([])
-        categories.forEach((cat) => {
-            setCategoryMenuItems(categoryMenuItems => [...categoryMenuItems, <MenuItem key={cat.categoryId} value={cat.categoryId}>{cat.categoryName}</MenuItem>])
-        })
-    }, [categories]);
-
-    React.useEffect(() => {
-        setSubCategoryMenuItems([])
-        subCategories.forEach((sub) => {
-            setSubCategoryMenuItems(subCategoryMenuItems => [...subCategoryMenuItems, <MenuItem key={sub.subCategoryId} value={sub.subCategoryId}>{sub.subCategoryName}</MenuItem>])
-        })
-    }, [subCategories]);
-
-    function onCategoryChange(event) {
-        setSelectedCategory(event.target.value)
-        getSubCategories(event.target.value)
-    }
-
-    function onUserChange(event) {
-        setSelectedUser(event.target.value)
-    }
-
-    function onSubCategoryChange(event) {
-        setSelectedSubCategory(event.target.value)
-    }
-
     return (
-        <Dialog open={isOpen} onClose={handleClose}>
-            <DialogTitle>Add Items</DialogTitle>
-            <DialogContent>
-                <DialogContentText>
-                    Please Add Items Properly, so that budget for this house can be calculated
-                </DialogContentText>
-                {status.visible && <Alert severity={status.type}>{status.message}</Alert>}
-                <FormControl variant="standard" sx={{ m: 1, minWidth: '100%' }}>
-                    <InputLabel id="users-label">Users</InputLabel>
-                    <Select
-                        labelId="users-label"
-                        id="users"
-                        label="Users"
-                        value={selectedUser}
-                        onChange={onUserChange}
-                    >
-                        {userItems}
-                    </Select>
-                </FormControl>
-                <FormControl variant="standard" sx={{ m: 1, minWidth: '100%' }}>
-                    <InputLabel id="category-label">Category</InputLabel>
-                    <Select
-                        labelId="category-label"
-                        id="category"
-                        label="Category"
-                        value={selectedCategory}
-                        onChange={onCategoryChange}
-                    >
-                        {categoryMenuItems}
-                    </Select>
-                </FormControl>
-                <FormControl variant="standard" sx={{ m: 1, minWidth: '100%' }}>
-                    <InputLabel id="subCategory-label">Sub Category</InputLabel>
-                    <Select
-                        labelId="subCategory-label"
-                        id="subCategory"
-                        label="Sub Category"
-                        value={selectedSubCategory}
-                        onChange={onSubCategoryChange}
-                    >
-                        {subCategoryMenuItems}
-                    </Select>
-                </FormControl>
-                <FormControl variant="standard" sx={{ m: 1, minWidth: '100%' }}>
-                    <TextField type={"number"} id="Amount" label="Amount" variant="standard" value={selectedPrice} onChange={(event) => { setSelectedPrice(event.target.value) }} />
-                </FormControl>
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button>Add New Item</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                    <DialogTitle>Add New Spending</DialogTitle>
+                    <DialogDescription>
+                        Add a new transaction to your budget. Click save when you're done.
+                    </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleSubmit}>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="user" className="text-right">
+                                User
+                            </Label>
+                            <Select
+                                value={selectedUser}
+                                onValueChange={setSelectedUser}
+                            >
+                                <SelectTrigger className="col-span-3">
+                                    <SelectValue placeholder="Select a user" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {users.map(user => (
+                                        <SelectItem key={user.personId} value={user.personId}>
+                                            {user.userName}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="category" className="text-right">
+                                Category
+                            </Label>
+                            <Select
+                                value={selectedCategory}
+                                onValueChange={setSelectedCategory}
+                            >
+                                <SelectTrigger className="col-span-3">
+                                    <SelectValue placeholder="Select a category" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {categories.map(cat => (
+                                        <SelectItem key={cat.categoryId} value={cat.categoryId}>
+                                            {cat.categoryName}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="subcategory" className="text-right">
+                                Subcategory
+                            </Label>
+                            <Select
+                                value={selectedSubCategory}
+                                onValueChange={setSelectedSubCategory}
+                                disabled={!selectedCategory}
+                            >
+                                <SelectTrigger className="col-span-3">
+                                    <SelectValue placeholder="Select a subcategory" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {filteredSubcategories.map(sub => (
+                                        <SelectItem key={sub.subCategoryId} value={sub.subCategoryId}>
+                                            {sub.subCategoryName}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="amount" className="text-right">
+                                Amount
+                            </Label>
+                            <Input
+                                id="amount"
+                                type="number"
+                                value={amount}
+                                onChange={(e) => setAmount(e.target.value)}
+                                className="col-span-3"
+                                placeholder="0.00"
+                            />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="date" className="text-right">
+                                Date
+                            </Label>
+                            <div className="col-span-3">
+                                <DatePickerDemo date={selectedDate} setDate={setSelectedDate} />
+                            </div>
+                        </div>
+
+                    </div>
+                    <DialogFooter>
+                        <Button type="submit">Save changes</Button>
+                    </DialogFooter>
+                </form>
             </DialogContent>
-            <DialogActions>
-                <Button onClick={addAnother}>Add Another</Button>
-                <Button onClick={addAndClose}>Add Item and Close</Button>
-                <Button onClick={handleClose}>Close</Button>
-            </DialogActions>
         </Dialog>
     );
 }

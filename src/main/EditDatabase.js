@@ -1,106 +1,126 @@
-import { Button, FormControl, InputLabel, MenuItem, Select, Stack, TextField } from '@mui/material';
 import * as React from 'react';
-import { useDispatch, useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux';
 import { getCategories, getSubCategories, postData } from './api/apiCaller';
-import { addAlert } from './store/mainDataSlice';
+import { addCategories, addAllSubCategories } from './store/mainDataSlice';
+import { toast } from "sonner";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 function EditDatabase() {
     const dispatch = useDispatch();
     const categories = useSelector(state => state.mainData.categories);
 
-    const [selectedCategory, setSelectedCategory] = React.useState("")
-    const [categoryMenuItems, setCategoryMenuItems] = React.useState([]);
+    const [newCategory, setNewCategory] = React.useState("");
+    const [newSubCategory, setNewSubCategory] = React.useState("");
+    const [selectedCategory, setSelectedCategory] = React.useState("");
 
-    const [categoryText, setCategoryText] = React.useState("")
-    const [subCategoryText, setSubCategoryText] = React.useState("")
-
-
-    function onCategoryChange(event) {
-        setSelectedCategory(event.target.value)
-    }
-
-    React.useEffect(() => {
-        categories.forEach((cat) => {
-            setCategoryMenuItems(categoryMenuItems => [...categoryMenuItems, <MenuItem key={cat.categoryId} value={cat.categoryId}>{cat.categoryName}</MenuItem>])
-        })
-    }, [categories]);
-
-    React.useEffect(() => {
-        getSubCategories(0);
-    }, []);
-
-    const addCategory = async () => {
-        if (categoryText) {
-            const status = await postData('categories', {
-                categoryName: categoryText
-            }, true);
-            if (status === '204') {
-                dispatch(addAlert({
-                    open: true,
-                    message: "Category added Succesfully",
-                    type: "success",
-                }));
-                getCategories();
-            } else {
-                dispatch(addAlert({
-                    open: true,
-                    message: "Category add failed",
-                    type: "error",
-                }));
-            }
+    const handleAddCategory = async () => {
+        if (!newCategory) {
+            toast.error("Please enter a category name.");
+            return;
+        }
+        try {
+            await postData('categories', { categoryName: newCategory });
+            toast.success("Category added successfully!");
+            const updatedCategories = await getCategories();
+            dispatch(addCategories(updatedCategories));
+            setNewCategory("");
+        } catch (error) {
+            toast.error("Failed to add category.");
         }
     };
 
-    const addSubCategory = async () => {
-        if (selectedCategory && subCategoryText) {
-            const status = await postData('subCategories/'+selectedCategory, {
+    const handleAddSubCategory = async () => {
+        if (!selectedCategory || !newSubCategory) {
+            toast.error("Please select a category and enter a subcategory name.");
+            return;
+        }
+        try {
+            await postData(`subCategories/${selectedCategory}`, {
                 categoryId: selectedCategory,
-                subCategoryName: subCategoryText,
-            }, true);
-            if (status === '204') {
-                dispatch(addAlert({
-                    open: true,
-                    message: "SubCategory added Succesfully",
-                    type: "success",
-                }));
-                getSubCategories(0);
-            } else {
-                dispatch(addAlert({
-                    open: true,
-                    message: "SubCategory add failed",
-                    type: "error",
-                }));
-            }
+                subCategoryName: newSubCategory,
+            });
+            toast.success("Subcategory added successfully!");
+            const updatedSubCategories = await getSubCategories(0);
+            dispatch(addAllSubCategories(updatedSubCategories));
+            setNewSubCategory("");
+            setSelectedCategory("");
+        } catch (error) {
+            toast.error("Failed to add subcategory.");
         }
     };
 
     return (
-        <>
-            <Stack spacing={2} alignItems="center" sx={{ paddingTop: '30px' }}>
-                <TextField id="cate" sx={{ width: '70%' }} label="Add Category" variant="standard" value={categoryText}
-                    onChange={(event) => { setCategoryText(event.target.value) }} />
-                <Button variant="outlined" sx={{ width: '70%' }} onClick={addCategory}>Add Category</Button>
-            </Stack>
-            <Stack spacing={2} alignItems="center" sx={{ paddingTop: '30px' }}>
-                <Stack spacing={2} alignItems="center" direction={'row'} sx={{ width: '70%' }}>
-                    <FormControl variant="standard" sx={{ width: '100%' }}>
-                        <InputLabel id="category-label">Category</InputLabel>
-                        <Select
-                            labelId="category-label"
-                            id="category"
-                            label="Category"
-                            sx={{ width: '100%' }}
-                            value={selectedCategory}
-                            onChange={onCategoryChange}
-                        >
-                            {categoryMenuItems}
-                        </Select>
-                    </FormControl>
-                    <TextField sx={{ width: '100%' }} label="Add SubCategory" variant="standard" value={subCategoryText} onChange={(event) => { setSubCategoryText(event.target.value) }} />
-                </Stack>
-                <Button variant="outlined" sx={{ width: '70%' }} onClick={() => { addSubCategory(); }}>Add SubCategory</Button>
-            </Stack>
-        </>
+        <div className="grid gap-6 md:grid-cols-2">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Add a New Category</CardTitle>
+                    <CardDescription>
+                        Create a new top-level category for your expenses.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid gap-2">
+                        <Label htmlFor="category-name">Category Name</Label>
+                        <Input
+                            id="category-name"
+                            value={newCategory}
+                            onChange={(e) => setNewCategory(e.target.value)}
+                            placeholder="e.g., Utilities"
+                        />
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <Button onClick={handleAddCategory}>Add Category</Button>
+                </CardFooter>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Add a New Subcategory</CardTitle>
+                    <CardDescription>
+                        Add a new subcategory under an existing main category.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid gap-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="parent-category">Parent Category</Label>
+                            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                                <SelectTrigger id="parent-category">
+                                    <SelectValue placeholder="Select a category" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {categories.map((cat) => (
+                                        <SelectItem key={cat.categoryId} value={cat.categoryId}>
+                                            {cat.categoryName}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="subcategory-name">Subcategory Name</Label>
+                            <Input
+                                id="subcategory-name"
+                                value={newSubCategory}
+                                onChange={(e) => setNewSubCategory(e.target.value)}
+                                placeholder="e.g., Electricity Bill"
+                                disabled={!selectedCategory}
+                            />
+                        </div>
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <Button onClick={handleAddSubCategory} disabled={!selectedCategory}>
+                        Add Subcategory
+                    </Button>
+                </CardFooter>
+            </Card>
+        </div>
     );
 }
 
