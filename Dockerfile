@@ -1,7 +1,7 @@
 # Multi-stage build for React app and Node.js backend
 
 # --- STAGE 1: REACT FRONTEND BUILD ---
-FROM node:25-alpine AS frontend-build
+FROM node:24-alpine AS frontend-build
 
 WORKDIR /app
 
@@ -21,7 +21,7 @@ COPY src/ ./src
 RUN npm run build
 
 # --- STAGE 2: EXPRESS BACKEND & FINAL ---
-FROM node:25-alpine AS final
+FROM node:24-alpine AS final
 
 WORKDIR /app
 
