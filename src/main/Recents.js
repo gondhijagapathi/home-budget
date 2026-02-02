@@ -72,7 +72,7 @@ function Recents() {
     };
 
     return (
-        <Card>
+        <Card className="w-full max-w-full">
             <CardHeader>
                 <CardTitle>Recent Spendings</CardTitle>
                 <CardDescription>A list of your last 10 transactions.</CardDescription>

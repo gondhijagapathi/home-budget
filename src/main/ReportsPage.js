@@ -160,7 +160,7 @@ const ReportsPage = () => {
     }, [date, dataInvalidated, dispatch]); // Add dataInvalidated and dispatch to dependency array
     return (
         <div className="flex flex-col gap-4 relative" ref={reportRef}> {/* Assign ref to the main container */}
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
                 <div className="z-10"> {/* Export button on the left */}
                     <Button id="export-button" onClick={handleExportImage} variant="outline" size="sm">
                         <Camera className="mr-2 h-4 w-4" /> Export as Image

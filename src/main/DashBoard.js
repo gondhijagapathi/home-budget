@@ -10,7 +10,7 @@ function DashBoard() {
 
     return (
         <div className="flex flex-col gap-4">
-            <div>
+            <div className="min-w-0">
                 <Recents />
             </div>
         </div>

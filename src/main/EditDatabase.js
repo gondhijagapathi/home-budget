@@ -92,7 +92,7 @@ function EditDatabase() {
             toast.error(error.message);
         }
     };
-    
+
     const handleEditCategoryClick = (category) => {
         setEditingCategoryId(category.categoryId);
         setEditingCategoryName(category.categoryName);
@@ -200,7 +200,7 @@ function EditDatabase() {
     };
 
     return (
-        <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-4">
+        <div className="grid gap-6 grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-4">
             <Card>
                 <CardHeader>
                     <CardTitle>Add a New Category</CardTitle>
@@ -275,66 +275,68 @@ function EditDatabase() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Category Name</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {categories.map((cat) => (
-                                <TableRow key={cat.categoryId}>
-                                    <TableCell className="font-medium">
-                                        {editingCategoryId === cat.categoryId ? (
-                                            <Input
-                                                value={editingCategoryName}
-                                                onChange={(e) => setEditingCategoryName(e.target.value)}
-                                            />
-                                        ) : (
-                                            cat.categoryName
-                                        )}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        {editingCategoryId === cat.categoryId ? (
-                                            <>
-                                                <Button size="sm" variant="outline" onClick={handleCancelEditCategory} className="mr-2">
-                                                    Cancel
-                                                </Button>
-                                                <Button size="sm" onClick={handleSaveCategory}>Save</Button>
-                                            </>
-                                        ) : (
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button
-                                                        aria-haspopup="true"
-                                                        size="icon"
-                                                        variant="ghost"
-                                                    >
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                        <span className="sr-only">Toggle menu</span>
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                    <DropdownMenuItem
-                                                        onSelect={() => handleEditCategoryClick(cat)}
-                                                    >
-                                                        Edit
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        onSelect={() => handleDeleteCategoryClick(cat.categoryId)}
-                                                    >
-                                                        Delete
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        )}
-                                    </TableCell>
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Category Name</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {categories.map((cat) => (
+                                    <TableRow key={cat.categoryId}>
+                                        <TableCell className="font-medium">
+                                            {editingCategoryId === cat.categoryId ? (
+                                                <Input
+                                                    value={editingCategoryName}
+                                                    onChange={(e) => setEditingCategoryName(e.target.value)}
+                                                />
+                                            ) : (
+                                                cat.categoryName
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            {editingCategoryId === cat.categoryId ? (
+                                                <>
+                                                    <Button size="sm" variant="outline" onClick={handleCancelEditCategory} className="mr-2">
+                                                        Cancel
+                                                    </Button>
+                                                    <Button size="sm" onClick={handleSaveCategory}>Save</Button>
+                                                </>
+                                            ) : (
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button
+                                                            aria-haspopup="true"
+                                                            size="icon"
+                                                            variant="ghost"
+                                                        >
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                            <span className="sr-only">Toggle menu</span>
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                        <DropdownMenuItem
+                                                            onSelect={() => handleEditCategoryClick(cat)}
+                                                        >
+                                                            Edit
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            onSelect={() => handleDeleteCategoryClick(cat.categoryId)}
+                                                        >
+                                                            Delete
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
                 </CardContent>
             </Card>
 
@@ -346,88 +348,90 @@ function EditDatabase() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Subcategory Name</TableHead>
-                                <TableHead>Parent Category</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {allSubCategories.map((subCat) => (
-                                <TableRow key={subCat.subCategoryId}>
-                                    <TableCell className="font-medium">
-                                        {editingSubCategoryId === subCat.subCategoryId ? (
-                                            <Input
-                                                value={editingSubCategoryName}
-                                                onChange={(e) => setEditingSubCategoryName(e.target.value)}
-                                            />
-                                        ) : (
-                                            subCat.subCategoryName
-                                        )}
-                                    </TableCell>
-                                    <TableCell>
-                                        {editingSubCategoryId === subCat.subCategoryId ? (
-                                            <Select
-                                                value={editingSubCategoryParentId}
-                                                onValueChange={setEditingSubCategoryParentId}
-                                            >
-                                                <SelectTrigger className="w-[180px]">
-                                                    <SelectValue placeholder="Select parent category" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {categories.map((cat) => (
-                                                        <SelectItem key={cat.categoryId} value={cat.categoryId}>
-                                                            {cat.categoryName}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        ) : (
-                                            categories.find(cat => cat.categoryId === subCat.categoryId)?.categoryName || 'N/A'
-                                        )}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        {editingSubCategoryId === subCat.subCategoryId ? (
-                                            <>
-                                                <Button size="sm" variant="outline" onClick={handleCancelEditSubCategory} className="mr-2">
-                                                    Cancel
-                                                </Button>
-                                                <Button size="sm" onClick={handleSaveSubCategory}>Save</Button>
-                                            </>
-                                        ) : (
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button
-                                                        aria-haspopup="true"
-                                                        size="icon"
-                                                        variant="ghost"
-                                                    >
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                        <span className="sr-only">Toggle menu</span>
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                    <DropdownMenuItem
-                                                        onSelect={() => handleEditSubCategoryClick(subCat)}
-                                                    >
-                                                        Edit
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        onSelect={() => handleDeleteSubCategoryClick(subCat.subCategoryId)}
-                                                    >
-                                                        Delete
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        )}
-                                    </TableCell>
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Subcategory Name</TableHead>
+                                    <TableHead>Parent Category</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {allSubCategories.map((subCat) => (
+                                    <TableRow key={subCat.subCategoryId}>
+                                        <TableCell className="font-medium">
+                                            {editingSubCategoryId === subCat.subCategoryId ? (
+                                                <Input
+                                                    value={editingSubCategoryName}
+                                                    onChange={(e) => setEditingSubCategoryName(e.target.value)}
+                                                />
+                                            ) : (
+                                                subCat.subCategoryName
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            {editingSubCategoryId === subCat.subCategoryId ? (
+                                                <Select
+                                                    value={editingSubCategoryParentId}
+                                                    onValueChange={setEditingSubCategoryParentId}
+                                                >
+                                                    <SelectTrigger className="w-[180px]">
+                                                        <SelectValue placeholder="Select parent category" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {categories.map((cat) => (
+                                                            <SelectItem key={cat.categoryId} value={cat.categoryId}>
+                                                                {cat.categoryName}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            ) : (
+                                                categories.find(cat => cat.categoryId === subCat.categoryId)?.categoryName || 'N/A'
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            {editingSubCategoryId === subCat.subCategoryId ? (
+                                                <>
+                                                    <Button size="sm" variant="outline" onClick={handleCancelEditSubCategory} className="mr-2">
+                                                        Cancel
+                                                    </Button>
+                                                    <Button size="sm" onClick={handleSaveSubCategory}>Save</Button>
+                                                </>
+                                            ) : (
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button
+                                                            aria-haspopup="true"
+                                                            size="icon"
+                                                            variant="ghost"
+                                                        >
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                            <span className="sr-only">Toggle menu</span>
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                        <DropdownMenuItem
+                                                            onSelect={() => handleEditSubCategoryClick(subCat)}
+                                                        >
+                                                            Edit
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            onSelect={() => handleDeleteSubCategoryClick(subCat.subCategoryId)}
+                                                        >
+                                                            Delete
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
                 </CardContent>
             </Card>
 

@@ -17,6 +17,7 @@ import { useDispatch } from 'react-redux'; // Import useDispatch
 const App = () => {
     const { setTheme } = useTheme();
     const dispatch = useDispatch();
+    const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
     React.useEffect(() => {
         const fetchData = async () => {
@@ -43,18 +44,19 @@ const App = () => {
                 <SideNav />
                 <div className="flex flex-col flex-1">
                     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-6">
-                        <Sheet>
+                        <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                             <SheetTrigger asChild>
                                 <Button size="icon" variant="outline" className="sm:hidden">
                                     <PanelLeft className="h-5 w-5" />
                                     <span className="sr-only">Toggle Menu</span>
                                 </Button>
                             </SheetTrigger>
-                            <SheetContent side="left" className="sm:max-w-xs">
+                            <SheetContent side="left" className="w-[280px] sm:w-[300px] sm:max-w-xs">
                                 <nav className="grid gap-6 text-lg font-medium">
                                     <Link
                                         to="#"
                                         className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:text-base"
+                                        onClick={() => setMobileMenuOpen(false)}
                                     >
                                         <Package2 className="h-5 w-5 transition-all group-hover:scale-110" />
                                         <span className="sr-only">Home Budget</span>
@@ -62,6 +64,7 @@ const App = () => {
                                     <Link
                                         to="/"
                                         className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                                        onClick={() => setMobileMenuOpen(false)}
                                     >
                                         <Home className="h-5 w-5" />
                                         Dashboard
@@ -69,6 +72,7 @@ const App = () => {
                                     <Link
                                         to="/reports"
                                         className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                                        onClick={() => setMobileMenuOpen(false)}
                                     >
                                         <LineChart className="h-5 w-5" />
                                         Reports
@@ -76,6 +80,7 @@ const App = () => {
                                     <Link
                                         to="/manage"
                                         className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                                        onClick={() => setMobileMenuOpen(false)}
                                     >
                                         <Settings className="h-5 w-5" />
                                         Manage
@@ -83,7 +88,7 @@ const App = () => {
                                 </nav>
                             </SheetContent>
                         </Sheet>
-                        
+
                         <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
                             <div className="ml-auto flex-1 sm:flex-initial">
                                 {/* Future header content can go here */}
