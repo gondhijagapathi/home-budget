@@ -15,7 +15,6 @@ import { CalendarIcon } from "lucide-react"
 export function DatePickerWithRange({ date, setDate }) {
   return (
     <div className="mx-auto w-60"> {/* Replaced Field with div */}
-      <Label htmlFor="date-picker-range">Date Picker Range</Label> {/* Replaced FieldLabel with Label */}
       <Popover>
         <PopoverTrigger asChild>
           <Button
