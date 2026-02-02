@@ -1,6 +1,6 @@
 # Home Budget App
 
-A full-stack personal budget management application built with React, Express, and MySQL.
+A full-stack personal budget management application built with React, Express, and MySQL..
 
 ## Tech Stack
 
