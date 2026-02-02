@@ -13,9 +13,21 @@ router.route('/categories')
   .get(controller.getAllCategories)
   .post(controller.postCategories);
 
+router.route('/categories/:id') // New PUT route for categories
+  .put(controller.updateCategory);
+
+router.route('/categories/delete/:id') // New DELETE route for categories
+  .delete(controller.deleteCategory);
+
 router.route('/subCategories/:id')
   .get(controller.getAllSubCategories)
   .post(controller.postSubCategories);
+
+router.route('/subCategories/:id') // New PUT route for subcategories
+  .put(controller.updateSubCategory);
+
+router.route('/subCategories/delete/:id') // New DELETE route for subcategories
+  .delete(controller.deleteSubCategory);
 
 router.route('/spendings')
   .post(controller.postSpendings)

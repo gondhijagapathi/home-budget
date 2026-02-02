@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useDispatch, useSelector } from 'react-redux';
 import { postData, getRecentSpendings } from './api/apiCaller';
-import { addRecentSpendings } from './store/mainDataSlice';
+import { addRecentSpendings, invalidateData } from './store/mainDataSlice';
 import { toast } from "sonner";
 import uuid from 'react-uuid';
 
@@ -43,8 +43,16 @@ export default function AddItemDialog() {
 
     const filteredSubcategories = allSubCategories.filter(sc => sc.categoryId === selectedCategory);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const resetFormFields = () => {
+        setSelectedCategory("");
+        setSelectedSubCategory("");
+        setAmount("");
+        // setSelectedUser(null); // Keep the selected user as per common UX for adding multiple items
+        // setSelectedDate(new Date()); // Removed as per user request
+    };
+
+    const handleSubmit = async (shouldCloseDialog) => {
+        // e.preventDefault(); // No longer needed if buttons handle submission
         if (!selectedCategory || !selectedSubCategory || !amount || !selectedUser || !selectedDate) {
             toast.error("Please fill out all required fields.");
             return;
@@ -63,18 +71,16 @@ export default function AddItemDialog() {
             await postData('spendings', { data });
             toast.success("Item added successfully!");
             
-            // Refresh recent spendings
             const spendings = await getRecentSpendings();
             dispatch(addRecentSpendings(spendings));
+            dispatch(invalidateData());
             
-            // Reset form and close dialog
-            setSelectedCategory("");
-            setSelectedSubCategory("");
-            setAmount("");
-            setSelectedUser(null);
-            setOpen(false);
+            resetFormFields(); // Reset fields regardless
+            if (shouldCloseDialog) {
+                setOpen(false); // Close dialog only if explicitly requested
+            }
         } catch (error) {
-            toast.error("Failed to add item.");
+            toast.error(error.message);
         }
     };
 
@@ -90,7 +96,8 @@ export default function AddItemDialog() {
                         Add a new transaction to your budget. Click save when you're done.
                     </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit}>
+                {/* Removed onSubmit={handleSubmit} from form, buttons will now handle submission */}
+                <form> 
                     <div className="grid gap-4 py-4">
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="user" className="text-right">
@@ -177,7 +184,8 @@ export default function AddItemDialog() {
 
                     </div>
                     <DialogFooter>
-                        <Button type="submit">Save changes</Button>
+                        <Button type="button" variant="outline" onClick={() => handleSubmit(false)}>Save and Add Another</Button>
+                        <Button type="button" onClick={() => handleSubmit(true)}>Save changes</Button>
                     </DialogFooter>
                 </form>
             </DialogContent>

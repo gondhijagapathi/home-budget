@@ -52,6 +52,22 @@ export function deleteSpending(id) {
   return apiCall('POST', `/api/spendings/delete/${id}`);
 }
 
+export function deleteCategory(id) {
+  return apiCall('DELETE', `/api/categories/delete/${id}`);
+}
+
+export function deleteSubCategory(id) {
+  return apiCall('DELETE', `/api/subCategories/delete/${id}`);
+}
+
+export function updateCategory(id, categoryName) {
+  return apiCall('PUT', `/api/categories/${id}`, { categoryName });
+}
+
+export function updateSubCategory(id, subCategoryName, categoryId) {
+  return apiCall('PUT', `/api/subCategories/${id}`, { subCategoryName, categoryId });
+}
+
 export function getSpendingsByDateRange(startDate, endDate) {
   const params = new URLSearchParams();
   if (startDate) {

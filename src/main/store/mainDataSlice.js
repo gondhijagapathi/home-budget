@@ -16,6 +16,7 @@ export const mainDataSlice = createSlice({
       message: "",
       type: "error",
     },
+    dataInvalidated: false, // New state to indicate data invalidation
   },
   reducers: {
     addDialogOpen: state => {
@@ -56,11 +57,17 @@ export const mainDataSlice = createSlice({
       state.alert.message = action.payload.message;
       state.alert.type = action.payload.type;
     },
+    invalidateData: (state) => { // New action to invalidate data
+      state.dataInvalidated = true;
+    },
+    resetDataInvalidated: (state) => { // New action to reset data invalidation flag
+      state.dataInvalidated = false;
+    },
   }
 })
 
 // Action creators are generated for each case reducer function
 export const { addDialogOpen, addDialogClose, addCategories, addSubCategories,
-  addSpendings, addUsers, clearSpendings, removeSpendings, addRecentSpendings, changeTab, addAllSubCategories, addAlert } = mainDataSlice.actions
+  addSpendings, addUsers, clearSpendings, removeSpendings, addRecentSpendings, changeTab, addAllSubCategories, addAlert, invalidateData, resetDataInvalidated } = mainDataSlice.actions
 
 export default mainDataSlice.reducer

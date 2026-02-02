@@ -21,19 +21,53 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { deleteSpending, getRecentSpendings } from './api/apiCaller';
 import { addRecentSpendings } from './store/mainDataSlice';
 import { toast } from "sonner";
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogTrigger // Also need DialogTrigger to manage dialog state
+} from "@/components/ui/dialog"; // Import Dialog components
+
 
 function Recents() {
-    const dispatch = useDispatch();
+    const dispatch = useDispatch(); // Correct usage of useDispatch
     const recentSpendings = useSelector(state => state.mainData.recentSpendings);
 
-    const handleDelete = async (id) => {
+    const [showConfirmDeleteDialog, setShowConfirmDeleteDialog] = React.useState(false);
+    const [spendingToDelete, setSpendingToDelete] = React.useState(null);
+
+    React.useEffect(() => {
+        const fetchRecent = async () => {
+            try {
+                const spendings = await getRecentSpendings();
+                dispatch(addRecentSpendings(spendings));
+            } catch (error) {
+                toast.error(error.message); // Display specific error message
+            }
+        };
+        fetchRecent();
+    }, [dispatch]); // Dependency array includes dispatch
+
+    const handleDeleteClick = (id) => {
+        setSpendingToDelete(id);
+        setShowConfirmDeleteDialog(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!spendingToDelete) return; // Should not happen
         try {
-            await deleteSpending(id);
+            await deleteSpending(spendingToDelete);
             const spendings = await getRecentSpendings();
             dispatch(addRecentSpendings(spendings));
             toast.success("Item deleted successfully!");
         } catch (error) {
-            toast.error("Failed to delete item.");
+            toast.error(error.message); // Display specific error message
+        } finally {
+            setSpendingToDelete(null);
+            setShowConfirmDeleteDialog(false);
         }
     };
 
@@ -73,7 +107,7 @@ function Recents() {
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                            <DropdownMenuItem onSelect={() => handleDelete(spend.spendingId)}>
+                                            <DropdownMenuItem onSelect={() => handleDeleteClick(spend.spendingId)}>
                                                 Delete
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
@@ -84,6 +118,21 @@ function Recents() {
                     </TableBody>
                 </Table>
             </CardContent>
+
+            <Dialog open={showConfirmDeleteDialog} onOpenChange={setShowConfirmDeleteDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Confirm Deletion</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete this spending record? This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowConfirmDeleteDialog(false)}>Cancel</Button>
+                        <Button variant="destructive" onClick={confirmDelete}>Delete</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </Card>
     );
 }
