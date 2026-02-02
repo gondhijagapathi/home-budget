@@ -1,107 +1,65 @@
-import { addCategories, addSubCategories, addUsers, addRecentSpendings, addAllSubCategories } from '../store/mainDataSlice'
-import store from '../store/store';
+
+
+async function apiCall(method, url, data = null) {
+  try {
+    const options = {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    };
+
+    if (data) {
+      options.body = JSON.stringify(data);
+    }
+
+    const response = await fetch(url, options);
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Something went wrong');
+    }
+
+    return result;
+  } catch (error) {
+    console.error("API call failed:", error);
+    throw error;
+  }
+}
+
 
 export function getCategories() {
-  fetch("/api/categories", {
-    method: 'GET',
-  })
-    .then(res => { return res.text() })
-    .then(data => JSON.parse(data))
-    .then(
-      (result) => {
-        store.dispatch(addCategories(result))
-      },
-      (error) => {
-        console.log("error from api" + error)
-      }
-    )
+  return apiCall('GET', "/api/categories");
 }
 
 export function getRecentSpendings() {
-  fetch("/api/spendings", {
-    method: 'GET',
-  })
-    .then(res => { return res.text() })
-    .then(data => JSON.parse(data))
-    .then(
-      (result) => {
-        store.dispatch(addRecentSpendings(result))
-      },
-      (error) => {
-        console.log("error from api" + error)
-      }
-    )
+  return apiCall('GET', "/api/spendings");
 }
 
 export function getSubCategories(id) {
-  fetch("/api/subCategories/" + id, {
-    method: 'GET',
-  })
-    .then(res => { return res.text() })
-    .then(data => JSON.parse(data))
-    .then(
-      (result) => {
-        if (id === 0) {
-          store.dispatch(addAllSubCategories(result))
-        } else {
-          store.dispatch(addSubCategories(result))
-        }
-      },
-      (error) => {
-        console.log("error from api" + error)
-      }
-    )
+  return apiCall('GET', `/api/subCategories/${id}`);
 }
 
 export function getUsers() {
-  fetch("/api/users", {
-    method: 'GET',
-  })
-    .then(res => { return res.text() })
-    .then(data => JSON.parse(data))
-    .then(
-      (result) => {
-        store.dispatch(addUsers(result))
-      },
-      (error) => {
-        console.log("error from api" + error)
-      }
-    )
+  return apiCall('GET', "/api/users");
 }
 
-export async function postData(ext, data, edit = false) {
-  var reqData = JSON.stringify({
-    data
-  })
-  if (edit) {
-    reqData = JSON.stringify(data)
+export function postData(ext, data) {
+  return apiCall('POST', `/api/${ext}`, data);
+}
+
+export function deleteSpending(id) {
+  return apiCall('POST', `/api/spendings/delete/${id}`);
+}
+
+export function getSpendingsByDateRange(startDate, endDate) {
+  const params = new URLSearchParams();
+  if (startDate) {
+    params.append('startDate', startDate);
   }
-  return fetch('/api/' + ext, {
-    method: 'post',
-    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-    body: reqData,
-  })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      return "204"
-    })
-    .catch((error) => {
-      console.error(error);
-      return "500"
-    });
+  if (endDate) {
+    params.append('endDate', endDate);
+  }
+  return apiCall('GET', `/api/spendings?${params.toString()}`);
 }
 
-export async function deleteSpending(id) {
-  return fetch('/api/spendings/delete/' + id, {
-    method: 'post',
-    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-  })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      return "204"
-    })
-    .catch((error) => {
-      console.error(error);
-      return "500"
-    });
-}

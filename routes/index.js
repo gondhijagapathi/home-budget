@@ -3,28 +3,26 @@
 'use strict';
 const express = require('express');
 const router = express.Router(); // 👈 1. Create a Router instance
-const controll = require('../controllers/HomeBudgetController');
-
-// 2. Define routes using 'router.route' instead of 'app.route'
+const controller = require('../controllers/HomeBudgetController');
 
 router.route('/users')
-  .get(controll.getAllUsers)
-  .post(controll.postUsers);
+  .get(controller.getAllUsers)
+  .post(controller.postUsers);
 
 router.route('/categories')
-  .get(controll.getAllCategories)
-  .post(controll.postCategories);
+  .get(controller.getAllCategories)
+  .post(controller.postCategories);
 
 router.route('/subCategories/:id')
-  .get(controll.getAllSubCategories)
-  .post(controll.postSubCategories);
+  .get(controller.getAllSubCategories)
+  .post(controller.postSubCategories);
 
 router.route('/spendings')
-  .post(controll.postSpendings)
-  .get(controll.getAllSpendings);
+  .post(controller.postSpendings)
+  .get(controller.getAllSpendings);
 
 router.route('/spendings/delete/:id')
-  .post(controll.deleteSpendings);
+  .post(controller.deleteSpendings);
 
 // 3. Export the router object
 module.exports = router;

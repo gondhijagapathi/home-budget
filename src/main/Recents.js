@@ -1,85 +1,92 @@
 import * as React from 'react';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import Divider from '@mui/material/Divider';
-import ListItemText from '@mui/material/ListItemText';
-import ListItemAvatar from '@mui/material/ListItemAvatar';
-import Avatar from '@mui/material/Avatar';
-import DeleteIcon from '@mui/icons-material/Delete'
-import DateRangeIcon from '@mui/icons-material/DateRange';
-import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
-import { useSelector } from 'react-redux';
-import { Grid, IconButton, Typography } from '@mui/material';
-import { Stack } from '@mui/system';
+import { useSelector, useDispatch } from 'react-redux';
+import { MoreHorizontal } from "lucide-react";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { deleteSpending, getRecentSpendings } from './api/apiCaller';
-
-
-function RecentItemView({ spend, itemName }) {
-    async function deleteSpend(id) {
-        const res = await deleteSpending(id);
-        if (res === '204') {
-            getRecentSpendings();
-        }
-    }
-
-    return (
-        <>
-            <ListItem alignItems="flex-start" secondaryAction={
-                <IconButton edge="end" aria-label="Delete" onClick={() => { deleteSpend(spend.spendingId) }}>
-                    <DeleteIcon />
-                </IconButton>
-            }>
-                <ListItemAvatar>
-                    <Avatar alt="Remy Sharp" src="https://www.shareicon.net/data/512x512/2016/05/05/760099_food_512x512.png" />
-                </ListItemAvatar>
-                <ListItemText
-                    primary={itemName}
-                    disableTypography
-
-                    style={{ color: 'white' }}
-                    secondary={
-                        <React.Fragment>
-                            <Grid container sx={{ marginTop: '3px' }} spacing={2}>
-                                <Grid item>
-                                    <Stack direction="row" alignItems="center" gap={1}>
-                                        <CurrencyRupeeIcon />
-                                        <Typography variant="body1">{spend.amount}</Typography>
-                                    </Stack>
-                                </Grid>
-                                <Grid item>
-                                    <Stack direction="row" alignItems="center" gap={1}>
-                                        <DateRangeIcon />
-                                        <Typography variant="body1">{spend.dateOfSpending}</Typography>
-                                    </Stack>
-                                </Grid>
-                            </Grid>
-                        </React.Fragment>
-                    }
-                />
-            </ListItem><Divider variant="inset" component="li" />
-        </>
-    );
-}
+import { addRecentSpendings } from './store/mainDataSlice';
+import { toast } from "sonner";
 
 function Recents() {
-    const [listOfItems, addListOfItems] = React.useState([])
+    const dispatch = useDispatch();
+    const recentSpendings = useSelector(state => state.mainData.recentSpendings);
 
-    const recentSpendings = useSelector(state => state.mainData.recentSpendings)
-
-    React.useEffect(() => {
-        var list = [];
-        recentSpendings.forEach((spend) => {
-            list = [...list, <RecentItemView spend={spend} itemName={spend.subCategoryName} />]
-        });
-        addListOfItems(list)
-        // eslint-disable-next-line
-    }, [recentSpendings]);
+    const handleDelete = async (id) => {
+        try {
+            await deleteSpending(id);
+            const spendings = await getRecentSpendings();
+            dispatch(addRecentSpendings(spendings));
+            toast.success("Item deleted successfully!");
+        } catch (error) {
+            toast.error("Failed to delete item.");
+        }
+    };
 
     return (
-        <List sx={{ width: '100%', minHeight: '100%', height: '100%', bgcolor: 'background.paper', paddingBottom: '72px' }}>
-            {listOfItems}
-        </List>
+        <Card>
+            <CardHeader>
+                <CardTitle>Recent Spendings</CardTitle>
+                <CardDescription>A list of your last 10 transactions.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Category</TableHead>
+                            <TableHead>Subcategory</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                            <TableHead>
+                                <span className="sr-only">Actions</span>
+                            </TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {recentSpendings.map((spend) => (
+                            <TableRow key={spend.spendingId}>
+                                <TableCell className="font-medium">{new Date(spend.dateOfSpending).toLocaleDateString()}</TableCell>
+                                <TableCell>{spend.categoryName}</TableCell>
+                                <TableCell>{spend.subCategoryName}</TableCell>
+                                <TableCell className="text-right">₹{spend.amount.toFixed(2)}</TableCell>
+                                <TableCell>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                                <span className="sr-only">Toggle menu</span>
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                            <DropdownMenuItem onSelect={() => handleDelete(spend.spendingId)}>
+                                                Delete
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
     );
 }
 
 export default Recents;
+

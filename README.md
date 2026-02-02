@@ -1,70 +1,146 @@
-# Getting Started with Create React App
+# Home Budget App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A full-stack personal budget management application built with React, Express, and MySQL.
 
-## Available Scripts
+## Tech Stack
 
-In the project directory, you can run:
+- **Frontend**: React 18, Tailwind CSS v4, Redux Toolkit, Highcharts
+- **Backend**: Node.js, Express 5
+- **Database**: MySQL / MariaDB
+- **Build Tool**: Webpack 5
+- **UI Components**: shadcn/ui (Radix UI primitives)
 
-### `npm start`
+## Prerequisites
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- Node.js 18+ and npm
+- MySQL / MariaDB database
+- (Optional) Docker and Docker Compose
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Setup
 
-### `npm test`
+### 1. Clone and Install
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```bash
+git clone <your-repo-url>
+cd home-budget
+npm install
+```
 
-### `npm run build`
+### 2. Configure Environment
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Copy `.env.example` to `.env` and fill in your database credentials:
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```bash
+cp .env.example .env
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Edit `.env`:
+```
+PORT=8083
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=your_database_user
+DB_PASSWORD=your_database_password
+DB_DATABASE=home_budget
+```
 
-### `npm run eject`
+### 3. Database Setup
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Create the database and tables (you'll need to set up your schema). The app expects tables:
+- `users`
+- `category`
+- `subCategory`
+- `spendings`
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### 4. Run Development Server
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+**Frontend + Backend (dev mode):**
+```bash
+npm start
+```
+Opens at [http://localhost:3000](http://localhost:3000) (webpack-dev-server)
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+**Backend only:**
+```bash
+npm run server
+```
+Runs Express server on port 8083 (or PORT from .env)
 
-## Learn More
+### 5. Build for Production
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```bash
+npm run build
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+Outputs to `build/` directory. Then run:
+```bash
+npm run server
+```
 
-### Code Splitting
+## Docker
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### Build and Run
 
-### Analyzing the Bundle Size
+```bash
+docker compose up --build
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+The app will be available at [http://localhost:8083](http://localhost:8083)
 
-### Making a Progressive Web App
+### Docker Compose
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+The `docker-compose.yml` includes:
+- Multi-stage Docker build (frontend + backend)
+- Health check for container orchestration
+- Environment file support (`.env`)
 
-### Advanced Configuration
+## Project Structure
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+```
+home-budget/
+├── src/                    # React frontend source
+│   ├── components/         # UI components (shadcn/ui)
+│   ├── main/              # Main app pages
+│   │   ├── DashBoard.js
+│   │   ├── ReportsPage.js
+│   │   ├── EditDatabase.js
+│   │   └── api/           # API client
+│   └── store/             # Redux store
+├── controllers/            # Express route handlers
+├── models/                 # Database connection
+├── routes/                 # Express routes
+├── public/                 # Static assets
+├── server.js               # Express server entry
+└── webpack.config.js       # Webpack configuration
+```
 
-### Deployment
+## API Endpoints
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+- `GET /api/spendings` - Get all spendings (optional query: `?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`)
+- `POST /api/spendings` - Create new spending
+- `POST /api/spendings/delete/:id` - Delete spending
+- `GET /api/users` - Get all users
+- `POST /api/users` - Create user
+- `GET /api/categories` - Get all categories
+- `POST /api/categories` - Create category
+- `GET /api/subCategories/:id` - Get subcategories (id="0" for all)
+- `POST /api/subCategories/:id` - Create subcategory
 
-### `npm run build` fails to minify
+## Features
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- 📊 Dashboard with recent spendings
+- 📈 Reports with date range filtering and charts
+- 🗄️ Database management (categories, subcategories, users)
+- 🌓 Dark/Light theme support
+- 📱 Responsive design
+
+## Development Notes
+
+- Uses Tailwind CSS v4 with CSS-first configuration (`@theme` in `src/index.css`)
+- No `tailwind.config.js` needed (theme defined in CSS)
+- Webpack handles both frontend build and dev server
+- Redux Toolkit for state management
+
+## License
+
+Private project
