@@ -4,13 +4,15 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { IndianRupee, Camera, ArrowUpCircle, ArrowDownCircle, Wallet } from 'lucide-react';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 import { addDays, format } from 'date-fns';
+import { calculateKPIs, processChartData, processSankeyData, separateTransactions } from './utils/reportUtils';
 import { getSpendingsByDateRange, getIncomes } from './api/apiCaller';
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
+import HighchartsSankey from 'highcharts/modules/sankey';
 import { useTheme } from '@/components/theme-provider';
 import { getHighchartsTheme } from './highchartsTheme';
-import { resetDataInvalidated } from './store/mainDataSlice';
-import html2canvas from 'html2canvas';
+
+import { toPng } from 'html-to-image';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import PaginationControls from './components/PaginationControls';
@@ -22,7 +24,7 @@ function resolveTheme(theme) {
 
 const ReportsPage = () => {
     const dispatch = useDispatch();
-    const dataInvalidated = useSelector(state => state.mainData.dataInvalidated);
+    const lastUpdated = useSelector(state => state.mainData.lastUpdated);
     const { theme } = useTheme();
     const resolvedTheme = useMemo(() => resolveTheme(theme), [theme]);
 
@@ -40,6 +42,7 @@ const ReportsPage = () => {
         if (date?.to) localStorage.setItem('reportEndDate', date.to.toISOString());
     }, [date]);
     const [spendings, setSpendings] = useState([]);
+    const [investments, setInvestments] = useState([]);
     const [incomes, setIncomes] = useState([]);
 
     // Pagination states
@@ -64,26 +67,36 @@ const ReportsPage = () => {
     const [loading, setLoading] = useState(false);
 
     // KPI Calculations
-    const totalSpend = spendings.reduce((acc, item) => acc + item.amount, 0);
-    const totalIncome = incomes.reduce((acc, item) => acc + item.amount, 0);
-    const netSavings = totalIncome - totalSpend;
+    const {
+        totalSpend,
+        totalInvestments,
+        totalIncome,
+        netSavings,
+        savingsRate,
+        avgDailySpend
+    } = useMemo(() => calculateKPIs(spendings, investments, incomes, date), [spendings, investments, incomes, date]);
 
     // Processed Data States
     const [categoryPieData, setCategoryPieData] = useState([]);
     const [subCategoryBarData, setSubCategoryBarData] = useState({ categories: [], data: [] });
-    const [dailyTrendData, setDailyTrendData] = useState({ dates: [], data: [] });
+    const [dailyTrendData, setDailyTrendData] = useState({ dates: [], spending: [], income: [] });
+    const [sankeyData, setSankeyData] = useState([]);
     const [topTransactions, setTopTransactions] = useState([]);
 
     const reportRef = useRef();
 
     const handleExportImage = () => {
         if (reportRef.current) {
-            html2canvas(reportRef.current, { useCORS: true }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = 'home-budget-report.png';
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-            });
+            toPng(reportRef.current, { cacheBust: true })
+                .then((dataUrl) => {
+                    const link = document.createElement('a');
+                    link.download = 'home-budget-report.png';
+                    link.href = dataUrl;
+                    link.click();
+                })
+                .catch((err) => {
+                    console.error('Failed to export dashboard:', err);
+                });
         }
     };
 
@@ -118,12 +131,53 @@ const ReportsPage = () => {
     const lineChartOptions = useMemo(() => ({
         ...baseChartOptions,
         chart: { ...baseChartOptions.chart, type: 'spline', height: 300 },
-        title: { text: 'Daily Trend', ...baseChartOptions.title, style: { fontSize: '16px' } },
+        title: { text: 'Cumulative Cash Flow (Month to Date)', ...baseChartOptions.title, style: { fontSize: '16px' } },
         xAxis: { ...baseChartOptions.xAxis, categories: dailyTrendData.dates },
         yAxis: { ...baseChartOptions.yAxis, title: { text: 'Amount' } },
-        legend: { enabled: false },
-        series: [{ name: 'Spending', data: dailyTrendData.data }]
+        legend: { enabled: true },
+        tooltip: { shared: true },
+        series: [
+            { name: 'Income', data: dailyTrendData.income, color: '#22c55e' }, // Green
+            { name: 'Spending', data: dailyTrendData.spending, color: '#ef4444' } // Red
+        ]
     }), [baseChartOptions, dailyTrendData]);
+
+    const sankeyChartOptions = useMemo(() => {
+        const dynamicHeight = Math.max(400, sankeyData.length * 30);
+        return {
+            ...baseChartOptions,
+            chart: { ...baseChartOptions.chart, type: 'sankey', height: dynamicHeight },
+            title: { text: 'Financial Flow (Income > Wallet > Spending)', ...baseChartOptions.title, style: { fontSize: '16px' } },
+            tooltip: {
+                headerFormat: null,
+                pointFormat: '{point.fromNode.name} \u2192 {point.toNode.name}: <b>₹{point.weight:.2f}</b>',
+                nodeFormat: '{point.name}: <b>₹{point.sum:.2f}</b>'
+            },
+            series: [{
+                keys: ['from', 'to', 'weight'],
+                data: sankeyData,
+                type: 'sankey',
+                name: 'Financial Flow',
+                colorByPoint: true
+            }],
+            plotOptions: {
+                sankey: {
+                    dataLabels: {
+                        enabled: true,
+                        nodeFormat: '{point.name}',
+                        style: {
+                            fontSize: '12px',
+                            color: baseChartOptions.title?.style?.color || (resolvedTheme === 'dark' ? '#cccccc' : '#333333'),
+                            textOutline: 'none',
+                            fontWeight: 'normal'
+                        }
+                    }
+                }
+            },
+            xAxis: { visible: false },
+            yAxis: { visible: false }
+        };
+    }, [baseChartOptions, sankeyData]);
 
 
     useEffect(() => {
@@ -136,53 +190,33 @@ const ReportsPage = () => {
                 try {
                     // Fetch Spendings (High limit for analytics)
                     const spendResponse = await getSpendingsByDateRange(formattedStartDate, formattedEndDate, 1, 10000);
-                    const spendData = spendResponse.data || [];
-                    setSpendings(spendData);
+                    const allSpendData = spendResponse.data || [];
+
+                    // Separate Investments and Expenses
+                    const { expenses: expensesData, investments: investmentsData } = separateTransactions(allSpendData);
+
+                    setSpendings(expensesData);
+                    setInvestments(investmentsData);
 
                     // Fetch Top 15 Largest Transactions (DB Sorted)
-                    const topSpendResponse = await getSpendingsByDateRange(formattedStartDate, formattedEndDate, 1, 15, 'amount', 'DESC');
-                    setTopTransactions(topSpendResponse.data || []);
+                    // We must filter investments out if we want "Top Expenses"
+                    const sortedExpenses = [...expensesData].sort((a, b) => b.amount - a.amount).slice(0, 15);
+                    setTopTransactions(sortedExpenses);
 
                     // Fetch Incomes (High limit for analytics)
                     const incomeResponse = await getIncomes(formattedStartDate, formattedEndDate, 1, 10000);
                     const incomeData = incomeResponse.data || [];
                     setIncomes(incomeData);
 
-                    // --- Processing for Charts (using spendData) ---
+                    // --- Processing for Charts (using expensesData) ---
+                    // --- Processing for Charts (using expensesData) ---
+                    const { pieData, barData, lineData } = processChartData(expensesData, incomeData);
+                    const sankeyLinks = processSankeyData(expensesData, incomeData);
 
-                    // 1. Pie Chart
-                    const categoryMap = {};
-                    spendData.forEach(item => {
-                        categoryMap[item.categoryName] = (categoryMap[item.categoryName] || 0) + item.amount;
-                    });
-                    setCategoryPieData(Object.entries(categoryMap).map(([name, y]) => ({ name, y })));
-
-                    // 2. Bar Chart
-                    const subCategoryMap = {};
-                    spendData.forEach(item => {
-                        subCategoryMap[item.subCategoryName] = (subCategoryMap[item.subCategoryName] || 0) + item.amount;
-                    });
-                    const sortedSubCats = Object.entries(subCategoryMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
-                    setSubCategoryBarData({
-                        categories: sortedSubCats.map(i => i[0]),
-                        data: sortedSubCats.map(i => i[1])
-                    });
-
-                    // 3. Line Chart
-                    const dateMap = {};
-                    spendData.forEach(item => {
-                        const day = item.dateOfSpending?.split(' ')[0] || 'Unknown';
-                        dateMap[day] = (dateMap[day] || 0) + item.amount;
-                    });
-                    const sortedDates = Object.keys(dateMap).sort();
-                    setDailyTrendData({
-                        dates: sortedDates.map(d => format(new Date(d), 'MMM dd')),
-                        data: sortedDates.map(d => dateMap[d])
-                    });
-
-                    // 4. Top Transactions
-                    // Fetching separately now via getSpendingsByDateRange with 'amount' sort.
-                    // See above.
+                    setCategoryPieData(pieData);
+                    setSubCategoryBarData(barData);
+                    setDailyTrendData(lineData);
+                    setSankeyData(sankeyLinks);
 
                 } catch (error) {
                     console.error("Error fetching report data:", error);
@@ -192,14 +226,10 @@ const ReportsPage = () => {
             }
         };
 
-        fetchData();
-
-        if (dataInvalidated) {
+        if (date?.from && date?.to) {
             fetchData();
-            dispatch(resetDataInvalidated());
         }
-
-    }, [date, dataInvalidated, dispatch]);
+    }, [date, lastUpdated, dispatch]);
 
     return (
         <div className="flex flex-col gap-6 relative" ref={reportRef}>
@@ -219,11 +249,23 @@ const ReportsPage = () => {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Spending</CardTitle>
+                        <CardTitle className="text-sm font-medium">Total Spending (Excl. Inv)</CardTitle>
                         <ArrowDownCircle className="h-4 w-4 text-red-500" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">₹{totalSpend.toFixed(2)}</div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            ~ ₹{avgDailySpend.toFixed(0)} / day
+                        </p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Investments</CardTitle>
+                        <ArrowUpCircle className="h-4 w-4 text-purple-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">₹{totalInvestments.toFixed(2)}</div>
                     </CardContent>
                 </Card>
                 <Card>
@@ -244,12 +286,17 @@ const ReportsPage = () => {
                         <div className={`text-2xl font-bold ${netSavings >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                             ₹{netSavings.toFixed(2)}
                         </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            {savingsRate.toFixed(1)}% savings rate
+                        </p>
                     </CardContent>
                 </Card>
             </div>
 
             {/* Charts */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+
                 <Card>
                     <CardHeader><CardTitle>Spending by Category</CardTitle></CardHeader>
                     <CardContent>
@@ -266,6 +313,16 @@ const ReportsPage = () => {
                     <CardHeader><CardTitle>Spending Trends</CardTitle></CardHeader>
                     <CardContent>
                         <HighchartsReact highcharts={Highcharts} options={lineChartOptions} />
+                    </CardContent>
+                </Card>
+
+                <Card className="md:col-span-2">
+                    <CardHeader>
+                        <CardTitle>Financial Flow</CardTitle>
+                        <CardDescription>Visualizing how money moves from Income Sources to Expenses & Savings</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <HighchartsReact highcharts={Highcharts} options={sankeyChartOptions} />
                     </CardContent>
                 </Card>
 

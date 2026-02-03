@@ -9,33 +9,33 @@ import BackupRestoreCard from './components/BackupRestoreCard';
 
 function EditDatabase() {
     return (
-        <div className="grid gap-6 grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-4">
-            {/* Add Category */}
-            <AddCategoryCard />
+        <div className="flex flex-col gap-6">
+            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+                {/* Add Category */}
+                <AddCategoryCard />
 
-            {/* Backup & Restore */}
-            <BackupRestoreCard />
+                {/* Add Subcategory */}
+                <AddSubCategoryCard />
 
-            {/* Add Subcategory */}
-            <AddSubCategoryCard />
+                {/* Add Income Source */}
+                <AddIncomeSourceCard />
 
-            {/* Add Income Source */}
-            <AddIncomeSourceCard />
+                {/* View & Edit Categories */}
+                <CategoryListCard />
 
-            {/* Spacer or another small card could go here to balance grid if needed, 
-                but 3 small cards is fine. Next is full width lists usually. 
-            */}
-            <div className="hidden 2xl:block"></div> { /* Spacer for 4-col layout */}
+                {/* View & Edit Subcategories */}
+                <SubCategoryListCard />
 
-            {/* View & Edit Categories */}
-            <CategoryListCard />
+                {/* View & Edit Income Sources */}
+                <IncomeSourceListCard />
+            </div>
 
-            {/* View & Edit Subcategories */}
-            <SubCategoryListCard />
+            {/* Backup & Restore - Full width independent card */}
+            <div className="w-full">
+                <BackupRestoreCard />
+            </div>
 
-            {/* View & Edit Income Sources */}
-            <IncomeSourceListCard />
-        </div>
+        </div >
     );
 }
 

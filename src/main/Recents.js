@@ -37,7 +37,7 @@ import DeleteConfirmationDialog from './components/DeleteConfirmationDialog';
 
 function Recents() {
     const dispatch = useDispatch();
-    const dataInvalidated = useSelector(state => state.mainData.dataInvalidated);
+    const lastUpdated = useSelector(state => state.mainData.lastUpdated);
 
     // Global Data for Dropdowns (for editing Income)
     const incomeSources = useSelector(state => state.mainData.incomeSources);
@@ -98,12 +98,11 @@ function Recents() {
     }, [activeTab, fetchExpenses, fetchIncomes]);
 
     React.useEffect(() => {
-        if (dataInvalidated) {
+        if (lastUpdated) {
             if (activeTab === 'expenses') fetchExpenses();
             if (activeTab === 'income') fetchIncomes();
-            // dispatch(resetDataInvalidated()); // Optional: Careful with loops
         }
-    }, [dataInvalidated, activeTab, fetchExpenses, fetchIncomes]);
+    }, [lastUpdated, activeTab, fetchExpenses, fetchIncomes]);
 
 
     // --- EXPENSE HANDLERS ---
@@ -193,7 +192,7 @@ function Recents() {
 
                     {/* EXPENSES TAB */}
                     <TabsContent value="expenses">
-                        <div className="rounded-md border">
+                        <div className="rounded-md border max-w-full overflow-x-auto">
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -245,7 +244,7 @@ function Recents() {
 
                     {/* INCOME TAB */}
                     <TabsContent value="income">
-                        <div className="rounded-md border">
+                        <div className="rounded-md border max-w-full overflow-x-auto">
                             <Table>
                                 <TableHeader>
                                     <TableRow>
