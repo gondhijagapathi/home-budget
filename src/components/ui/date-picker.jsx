@@ -12,8 +12,10 @@ import { format } from "date-fns"
 import { ChevronDownIcon } from "lucide-react"
 
 export function DatePickerDemo({ date, setDate }) {
+  const [open, setOpen] = React.useState(false);
+
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -28,17 +30,23 @@ export function DatePickerDemo({ date, setDate }) {
         <Calendar
           mode="single"
           selected={date}
-          onSelect={setDate}
+          onSelect={(d) => {
+            setDate(d);
+            setOpen(false);
+          }}
           defaultMonth={date}
         />
         <div className="p-2">
-            <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => setDate(new Date())}
-            >
-                Today
-            </Button>
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => {
+              setDate(new Date());
+              setOpen(false);
+            }}
+          >
+            Today
+          </Button>
         </div>
       </PopoverContent>
     </Popover>

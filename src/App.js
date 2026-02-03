@@ -12,17 +12,19 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useTheme } from "./components/theme-provider";
 import { getCategories, getUsers, getSubCategories, getIncomeSources } from './main/api/apiCaller'; // Import API calls
 import { addCategories, addUsers, addAllSubCategories, addIncomeSources } from './main/store/mainDataSlice'; // Import Redux actions
-import { useDispatch } from 'react-redux'; // Import useDispatch
+import { useDispatch, useSelector } from 'react-redux'; // Import useDispatch and useSelector
 
 const App = () => {
     const { setTheme } = useTheme();
     const dispatch = useDispatch();
+    const lastUpdated = useSelector(state => state.mainData.lastUpdated); // Listen to updates
     const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
     React.useEffect(() => {
         const fetchData = async () => {
             try {
                 // Fetch with high limit to populate "all" options for dropdowns
+                // Re-fetched whenever lastUpdated changes to ensure consistent state
                 const [categoriesRes, allSubCategoriesRes, usersRes, incomeSourcesRes] = await Promise.all([
                     getCategories(1, 1000),
                     getSubCategories(0, 1, 1000),
@@ -42,7 +44,7 @@ const App = () => {
         };
 
         fetchData();
-    }, [dispatch]);
+    }, [dispatch, lastUpdated]);
 
     return (
         <Router>

@@ -1,29 +1,40 @@
 import { format, differenceInDays } from 'date-fns';
 
 /**
- * Separates transactions into expenses and investments.
+ * Separates transactions into expenses, investments and asset building.
  * @param {Array} allSpendData - List of all spending transactions.
- * @returns {Object} { expenses, investments }
+ * @returns {Object} { expenses, investments, assetBuilding }
  */
 export const separateTransactions = (allSpendData) => {
-    const expenses = allSpendData.filter(item => item.categoryName !== 'Investments');
+    // Normalizing category check to handle potential typos ("Assert" vs "Asset") in DB
+    const isAssetBuilding = (name) => name === 'Assert Building' || name === 'Asset Building';
+
+    const expenses = allSpendData.filter(item => item.categoryName !== 'Investments' && !isAssetBuilding(item.categoryName));
     const investments = allSpendData.filter(item => item.categoryName === 'Investments');
-    return { expenses, investments };
+    const assetBuilding = allSpendData.filter(item => isAssetBuilding(item.categoryName));
+    return { expenses, investments, assetBuilding };
 };
 
 /**
  * Calculates KPIs for the report.
- * @param {Array} spendings - Expense transactions.
+ * @param {Array} spendings - Expense transactions (Excl Inv & Asset Building).
  * @param {Array} investments - Investment transactions.
+ * @param {Array} assetBuilding - Asset Building transactions.
  * @param {Array} incomes - Income transactions.
  * @param {Object} dateRange - { from: Date, to: Date }
  * @returns {Object} KPI values
  */
-export const calculateKPIs = (spendings, investments, incomes, dateRange) => {
+export const calculateKPIs = (spendings, investments, assetBuilding, incomes, dateRange) => {
     const totalSpend = spendings.reduce((acc, item) => acc + item.amount, 0);
     const totalInvestments = investments.reduce((acc, item) => acc + item.amount, 0);
+    const totalAssetBuilding = assetBuilding.reduce((acc, item) => acc + item.amount, 0);
     const totalIncome = incomes.reduce((acc, item) => acc + item.amount, 0);
+
+    // Net Savings: Income - Expenses (Traditional definition, usually implies what's left for Savings/Inv)
     const netSavings = totalIncome - totalSpend;
+
+    // Cash Available: Income - (Expenses + Investments + Asset Building)
+    const cashAvailable = totalIncome - (totalSpend + totalInvestments + totalAssetBuilding);
 
     const savingsRate = totalIncome > 0 ? ((netSavings / totalIncome) * 100) : 0;
 
@@ -35,8 +46,10 @@ export const calculateKPIs = (spendings, investments, incomes, dateRange) => {
     return {
         totalSpend,
         totalInvestments,
+        totalAssetBuilding,
         totalIncome,
         netSavings,
+        cashAvailable,
         savingsRate,
         avgDailySpend
     };
@@ -44,19 +57,20 @@ export const calculateKPIs = (spendings, investments, incomes, dateRange) => {
 
 /**
  * Processes data for Chart.js / Highcharts.
- * @param {Array} expenses - Expense transactions.
+ * @param {Array} expenses - Filtered Expense transactions (for Pie/Bar).
+ * @param {Array} allSpendings - All transactions including Inv & Asset Building (for Line Chart).
  * @param {Array} incomes - Income transactions.
  * @returns {Object} Structured data for charts { pieData, barData, lineData }
  */
-export const processChartData = (expenses, incomes) => {
-    // 1. Pie Chart (Category Breakdown)
+export const processChartData = (expenses, allSpendings, incomes) => {
+    // 1. Pie Chart (Category Breakdown) - Uses Filtered Expenses
     const categoryMap = {};
     expenses.forEach(item => {
         categoryMap[item.categoryName] = (categoryMap[item.categoryName] || 0) + item.amount;
     });
     const pieData = Object.entries(categoryMap).map(([name, y]) => ({ name, y }));
 
-    // 2. Bar Chart (Top 5 Subcategories)
+    // 2. Bar Chart (Top 5 Subcategories) - Uses Filtered Expenses
     const subCategoryMap = {};
     expenses.forEach(item => {
         subCategoryMap[item.subCategoryName] = (subCategoryMap[item.subCategoryName] || 0) + item.amount;
@@ -67,9 +81,9 @@ export const processChartData = (expenses, incomes) => {
         data: sortedSubCats.map(i => i[1])
     };
 
-    // 3. Line Chart (Cash Flow: Income vs Spending)
+    // 3. Line Chart (Cash Flow: Income vs Spending) - Uses ALL Spendings (Inv + Asset Building included)
     const spendingMap = {};
-    expenses.forEach(item => {
+    allSpendings.forEach(item => {
         const day = item.dateOfSpending?.split(' ')[0] || 'Unknown';
         spendingMap[day] = (spendingMap[day] || 0) + item.amount;
     });
@@ -117,10 +131,6 @@ export const processSankeyData = (expenses, incomes) => {
     const links = [];
 
     // 1. Income -> Wallet
-    // Assuming 'source' field exists on income, or we group by some ID.
-    // If no specific source name, we use "Total Income".
-    // Checking previous context, Income object structure wasn't fully deep-dived but 'sourceName' is likely.
-    // Fallback to "Other Income" if needed.
     const incomeMap = {};
     let totalIncome = 0;
 
@@ -137,7 +147,7 @@ export const processSankeyData = (expenses, incomes) => {
 
     // 2. Wallet -> Expenses (by Category)
     const expenseMap = {};
-    let totalExit = 0; // Expenses + Investments (if any passed, but we filter them out usually)
+    let totalExit = 0;
 
     expenses.forEach(item => {
         expenseMap[item.categoryName] = (expenseMap[item.categoryName] || 0) + item.amount;
@@ -150,8 +160,6 @@ export const processSankeyData = (expenses, incomes) => {
 
     // 3. Wallet -> Savings
     // Derived: Savings = Total Income - Total Expenses
-    // Note: If Expenses > Income, we don't show negative savings link (would break flow).
-    // We only show flow *out* to Savings if there is money left.
     if (totalIncome > totalExit) {
         const savings = totalIncome - totalExit;
         links.push(['My Wallet', 'Savings', savings]);

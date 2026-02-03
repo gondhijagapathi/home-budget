@@ -142,14 +142,14 @@ function SubCategoryListCard() {
     return (
         <Card>
             <CardHeader>
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="flex flex-col gap-4">
                     <div>
                         <CardTitle>View & Delete Subcategories</CardTitle>
                         <CardDescription>
                             Manage your existing subcategories.
                         </CardDescription>
                     </div>
-                    <div className="w-full md:w-auto">
+                    <div className="w-full sm:w-auto">
                         <Select value={filterCategoryId} onValueChange={handleFilterChange}>
                             <SelectTrigger className="w-full md:w-[200px]">
                                 <SelectValue placeholder="Filter by Category" />

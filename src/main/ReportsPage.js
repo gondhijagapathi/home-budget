@@ -43,6 +43,7 @@ const ReportsPage = () => {
     }, [date]);
     const [spendings, setSpendings] = useState([]);
     const [investments, setInvestments] = useState([]);
+    const [assetBuilding, setAssetBuilding] = useState([]);
     const [incomes, setIncomes] = useState([]);
 
     // Pagination states
@@ -70,11 +71,13 @@ const ReportsPage = () => {
     const {
         totalSpend,
         totalInvestments,
+        totalAssetBuilding,
         totalIncome,
         netSavings,
+        cashAvailable,
         savingsRate,
         avgDailySpend
-    } = useMemo(() => calculateKPIs(spendings, investments, incomes, date), [spendings, investments, incomes, date]);
+    } = useMemo(() => calculateKPIs(spendings, investments, assetBuilding, incomes, date), [spendings, investments, assetBuilding, incomes, date]);
 
     // Processed Data States
     const [categoryPieData, setCategoryPieData] = useState([]);
@@ -193,14 +196,15 @@ const ReportsPage = () => {
                     const allSpendData = spendResponse.data || [];
 
                     // Separate Investments and Expenses
-                    const { expenses: expensesData, investments: investmentsData } = separateTransactions(allSpendData);
+                    const { expenses: expensesData, investments: investmentsData, assetBuilding: assetBuildingData } = separateTransactions(allSpendData);
 
                     setSpendings(expensesData);
                     setInvestments(investmentsData);
+                    setAssetBuilding(assetBuildingData);
 
                     // Fetch Top 15 Largest Transactions (DB Sorted)
-                    // We must filter investments out if we want "Top Expenses"
-                    const sortedExpenses = [...expensesData].sort((a, b) => b.amount - a.amount).slice(0, 15);
+                    // We now want ALL transactions (investments, asset building, expenses) in the top list
+                    const sortedExpenses = [...allSpendData].sort((a, b) => b.amount - a.amount).slice(0, 15);
                     setTopTransactions(sortedExpenses);
 
                     // Fetch Incomes (High limit for analytics)
@@ -210,8 +214,11 @@ const ReportsPage = () => {
 
                     // --- Processing for Charts (using expensesData) ---
                     // --- Processing for Charts (using expensesData) ---
-                    const { pieData, barData, lineData } = processChartData(expensesData, incomeData);
-                    const sankeyLinks = processSankeyData(expensesData, incomeData);
+                    // processChartData now takes (expenses, allSpendings, incomes)
+                    // We pass 'allSpendData' (raw fetch result) for the Line Chart (Spending Trends)
+                    const { pieData, barData, lineData } = processChartData(expensesData, allSpendData, incomeData);
+                    // Financial Flow should show ALL data (Expenses + Investments + Asset Building)
+                    const sankeyLinks = processSankeyData(allSpendData, incomeData);
 
                     setCategoryPieData(pieData);
                     setSubCategoryBarData(barData);
@@ -246,10 +253,20 @@ const ReportsPage = () => {
             </div>
 
             {/* KPIs */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {/* KPIs */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Spending (Excl. Inv)</CardTitle>
+                        <CardTitle className="text-sm font-medium">Total Income</CardTitle>
+                        <ArrowUpCircle className="h-4 w-4 text-green-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">₹{totalIncome.toFixed(2)}</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Spending (Excl. Inv & Asset)</CardTitle>
                         <ArrowDownCircle className="h-4 w-4 text-red-500" />
                     </CardHeader>
                     <CardContent>
@@ -261,7 +278,16 @@ const ReportsPage = () => {
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Investments</CardTitle>
+                        <CardTitle className="text-sm font-medium">Asset Building</CardTitle>
+                        <ArrowUpCircle className="h-4 w-4 text-orange-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">₹{totalAssetBuilding.toFixed(2)}</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Investments</CardTitle>
                         <ArrowUpCircle className="h-4 w-4 text-purple-500" />
                     </CardHeader>
                     <CardContent>
@@ -270,11 +296,16 @@ const ReportsPage = () => {
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Income</CardTitle>
-                        <ArrowUpCircle className="h-4 w-4 text-green-500" />
+                        <CardTitle className="text-sm font-medium">Cash Available</CardTitle>
+                        <Wallet className="h-4 w-4 text-teal-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">₹{totalIncome.toFixed(2)}</div>
+                        <div className={`text-2xl font-bold ${cashAvailable >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            ₹{cashAvailable.toFixed(2)}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            (Liquid Cash)
+                        </p>
                     </CardContent>
                 </Card>
                 <Card>
