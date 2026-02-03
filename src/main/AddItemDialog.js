@@ -14,26 +14,38 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDispatch, useSelector } from 'react-redux';
-import { postData, getRecentSpendings } from './api/apiCaller';
+import { postData, getRecentSpendings, postIncome } from './api/apiCaller';
 import { addRecentSpendings, invalidateData } from './store/mainDataSlice';
 import { toast } from "sonner";
 import uuid from 'react-uuid';
 
-
 export default function AddItemDialog() {
     const dispatch = useDispatch();
     const [open, setOpen] = React.useState(false);
-    const [selectedCategory, setSelectedCategory] = React.useState("");
-    const [selectedSubCategory, setSelectedSubCategory] = React.useState("");
+
+    // Transaction Type: "expense" or "income"
+    const [transactionType, setTransactionType] = React.useState("expense");
+
+    // Shared Fields
     const [amount, setAmount] = React.useState("");
     const [selectedUser, setSelectedUser] = React.useState(null);
     const [selectedDate, setSelectedDate] = React.useState(new Date());
 
+    // Expense Fields
+    const [selectedCategory, setSelectedCategory] = React.useState("");
+    const [selectedSubCategory, setSelectedSubCategory] = React.useState("");
 
+    // Income Fields
+    const [selectedIncomeSource, setSelectedIncomeSource] = React.useState("");
+    const [description, setDescription] = React.useState("");
+
+    // Redux Data
     const categories = useSelector(state => state.mainData.categories);
     const allSubCategories = useSelector(state => state.mainData.allSubCategories);
     const users = useSelector(state => state.mainData.users);
+    const incomeSources = useSelector(state => state.mainData.incomeSources);
 
     React.useEffect(() => {
         if (users.length > 0 && selectedUser === null) {
@@ -44,43 +56,67 @@ export default function AddItemDialog() {
     const filteredSubcategories = allSubCategories.filter(sc => sc.categoryId === selectedCategory);
 
     const resetFormFields = () => {
+        setAmount("");
+        // Expense
         setSelectedCategory("");
         setSelectedSubCategory("");
-        setAmount("");
-        // setSelectedUser(null); // Keep the selected user as per common UX for adding multiple items
-        // setSelectedDate(new Date()); // Removed as per user request
+        // Income
+        setSelectedIncomeSource("");
+        setDescription("");
     };
 
     const handleSubmit = async (shouldCloseDialog) => {
-        // e.preventDefault(); // No longer needed if buttons handle submission
-        if (!selectedCategory || !selectedSubCategory || !amount || !selectedUser || !selectedDate) {
+        if (!amount || !selectedUser || !selectedDate) {
             toast.error("Please fill out all required fields.");
             return;
         }
 
-        const data = [
-            uuid(),
-            selectedSubCategory,
-            selectedUser,
-            parseFloat(amount),
-            format(selectedDate, "yyyy-MM-dd HH:mm:ss"),
-            selectedCategory,
-        ];
-
         try {
-            await postData('spendings', { data });
-            toast.success("Item added successfully!");
-            
-            const spendings = await getRecentSpendings();
-            dispatch(addRecentSpendings(spendings));
+            if (transactionType === 'expense') {
+                if (!selectedCategory || !selectedSubCategory) {
+                    toast.error("Please select a category and subcategory.");
+                    return;
+                }
+
+                const data = [
+                    uuid(),
+                    selectedSubCategory,
+                    selectedUser,
+                    parseFloat(amount),
+                    format(selectedDate, "yyyy-MM-dd HH:mm:ss"),
+                    selectedCategory,
+                ];
+                await postData('spendings', { data });
+
+                // Refresh spendings
+                const response = await getRecentSpendings(1, 10);
+                dispatch(addRecentSpendings(response.data || []));
+            } else {
+                // Income
+                if (!selectedIncomeSource) {
+                    toast.error("Please select an income source.");
+                    return;
+                }
+
+                const incomeData = {
+                    incomeSourceId: selectedIncomeSource,
+                    userId: selectedUser,
+                    amount: parseFloat(amount),
+                    dateOfIncome: format(selectedDate, "yyyy-MM-dd HH:mm:ss"),
+                    description: description || ""
+                };
+                await postIncome(incomeData);
+            }
+
+            toast.success(`${transactionType === 'expense' ? 'Spending' : 'Income'} added successfully!`);
             dispatch(invalidateData());
-            
-            resetFormFields(); // Reset fields regardless
+
+            resetFormFields();
             if (shouldCloseDialog) {
-                setOpen(false); // Close dialog only if explicitly requested
+                setOpen(false);
             }
         } catch (error) {
-            toast.error(error.message);
+            toast.error(error.message || "Failed to add item");
         }
     };
 
@@ -91,79 +127,45 @@ export default function AddItemDialog() {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>Add New Spending</DialogTitle>
+                    <DialogTitle>Add Transaction</DialogTitle>
                     <DialogDescription>
-                        Add a new transaction to your budget. Click save when you're done.
+                        Add a new expense or income.
                     </DialogDescription>
                 </DialogHeader>
-                {/* Removed onSubmit={handleSubmit} from form, buttons will now handle submission */}
-                <form> 
+
+                <Tabs value={transactionType} onValueChange={setTransactionType} className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="expense">Expense</TabsTrigger>
+                        <TabsTrigger value="income">Income</TabsTrigger>
+                    </TabsList>
+
                     <div className="grid gap-4 py-4">
+                        {/* Common: User */}
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="user" className="text-right">
-                                User
-                            </Label>
-                            <Select
-                                value={selectedUser}
-                                onValueChange={setSelectedUser}
-                            >
+                            <Label htmlFor="user" className="text-right">User</Label>
+                            <Select value={selectedUser} onValueChange={setSelectedUser}>
                                 <SelectTrigger className="col-span-3">
-                                    <SelectValue placeholder="Select a user" />
+                                    <SelectValue placeholder="Select User" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {users.map(user => (
-                                        <SelectItem key={user.personId} value={user.personId}>
-                                            {user.userName}
-                                        </SelectItem>
+                                    {users.map(u => (
+                                        <SelectItem key={u.personId} value={u.personId}>{u.userName}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
                         </div>
+
+                        {/* Common: Date */}
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="category" className="text-right">
-                                Category
-                            </Label>
-                            <Select
-                                value={selectedCategory}
-                                onValueChange={setSelectedCategory}
-                            >
-                                <SelectTrigger className="col-span-3">
-                                    <SelectValue placeholder="Select a category" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {categories.map(cat => (
-                                        <SelectItem key={cat.categoryId} value={cat.categoryId}>
-                                            {cat.categoryName}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <Label htmlFor="date" className="text-right">Date</Label>
+                            <div className="col-span-3">
+                                <DatePickerDemo date={selectedDate} setDate={setSelectedDate} />
+                            </div>
                         </div>
+
+                        {/* Common: Amount */}
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="subcategory" className="text-right">
-                                Subcategory
-                            </Label>
-                            <Select
-                                value={selectedSubCategory}
-                                onValueChange={setSelectedSubCategory}
-                                disabled={!selectedCategory}
-                            >
-                                <SelectTrigger className="col-span-3">
-                                    <SelectValue placeholder="Select a subcategory" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {filteredSubcategories.map(sub => (
-                                        <SelectItem key={sub.subCategoryId} value={sub.subCategoryId}>
-                                            {sub.subCategoryName}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="amount" className="text-right">
-                                Amount
-                            </Label>
+                            <Label htmlFor="amount" className="text-right">Amount</Label>
                             <Input
                                 id="amount"
                                 type="number"
@@ -173,21 +175,72 @@ export default function AddItemDialog() {
                                 placeholder="0.00"
                             />
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="date" className="text-right">
-                                Date
-                            </Label>
-                            <div className="col-span-3">
-                                <DatePickerDemo date={selectedDate} setDate={setSelectedDate} />
-                            </div>
-                        </div>
 
+                        <TabsContent value="expense" className="space-y-4 mt-0">
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="category" className="text-right">Category</Label>
+                                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder="Select Category" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {categories.map(cat => (
+                                            <SelectItem key={cat.categoryId} value={cat.categoryId}>{cat.categoryName}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="subcategory" className="text-right">Subcategory</Label>
+                                <Select
+                                    value={selectedSubCategory}
+                                    onValueChange={setSelectedSubCategory}
+                                    disabled={!selectedCategory}
+                                >
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder="Select Subcategory" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {filteredSubcategories.map(sub => (
+                                            <SelectItem key={sub.subCategoryId} value={sub.subCategoryId}>{sub.subCategoryName}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </TabsContent>
+
+                        <TabsContent value="income" className="space-y-4 mt-0">
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="source" className="text-right">Source</Label>
+                                <Select value={selectedIncomeSource} onValueChange={setSelectedIncomeSource}>
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder="Select Source" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {incomeSources.map(src => (
+                                            <SelectItem key={src.incomeSourceId} value={src.incomeSourceId}>{src.sourceName}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="description" className="text-right">Description</Label>
+                                <Input
+                                    id="description"
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    className="col-span-3"
+                                    placeholder="Optional description"
+                                />
+                            </div>
+                        </TabsContent>
                     </div>
+
                     <DialogFooter>
-                        <Button type="button" variant="outline" onClick={() => handleSubmit(false)}>Save and Add Another</Button>
-                        <Button type="button" onClick={() => handleSubmit(true)}>Save changes</Button>
+                        <Button type="button" variant="outline" onClick={() => handleSubmit(false)}>Save & Add Another</Button>
+                        <Button type="button" onClick={() => handleSubmit(true)}>Save Changes</Button>
                     </DialogFooter>
-                </form>
+                </Tabs>
             </DialogContent>
         </Dialog>
     );

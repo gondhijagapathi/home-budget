@@ -3,8 +3,21 @@ const db = require('../models/dbConnection');
 const UserController = {
     getAllUsers: async function (req, res) {
         try {
-            const results = await db('SELECT * from users');
-            res.json(results);
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 15;
+            const offset = (page - 1) * limit;
+
+            const countResult = await db('SELECT COUNT(*) as count FROM users');
+            const total = countResult[0].count;
+
+            const results = await db('SELECT * from users LIMIT ? OFFSET ?', [limit, offset]);
+
+            res.json({
+                data: results,
+                total: total,
+                page: page,
+                totalPages: Math.ceil(total / limit)
+            });
         } catch (error) {
             console.error(error);
             res.status(500).json({ error: 'Internal Server Error' });

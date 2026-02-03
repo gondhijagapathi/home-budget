@@ -15,11 +15,11 @@ if (missingVars.length > 0) {
 }
 
 const pool = mysql.createPool({
-    host     : process.env.DB_HOST,
-    user     : process.env.DB_USER,
-    password : process.env.DB_PASSWORD,
-    database : process.env.DB_DATABASE,
-    port     : process.env.DB_PORT || 3306,
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_DATABASE,
+    port: process.env.DB_PORT || 3306,
     connectionLimit: 10,
     acquireTimeout: 60000,
     timeout: 60000,
@@ -68,7 +68,7 @@ function formatParams(params) {
     return `[${params.length} params]`;
 }
 
-module.exports = async function(...args) {
+const db = async function (...args) {
     const query = args[0];
     const params = args.slice(1);
     const summary = getQuerySummary(query);
@@ -88,4 +88,8 @@ module.exports = async function(...args) {
         throw error;
     }
 };
+
+db.pool = pool;
+
+module.exports = db;
 

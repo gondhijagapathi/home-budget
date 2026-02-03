@@ -4,6 +4,10 @@ const SpendingController = {
     getAllSpendings: async function (req, res) {
         try {
             const { startDate, endDate } = req.query;
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 15;
+            const offset = (page - 1) * limit;
+
             let query = `
                 SELECT
                     spendings.*,
@@ -19,16 +23,41 @@ const SpendingController = {
                 LEFT JOIN
                     users ON spendings.userId = users.personId
             `;
+
             const queryParams = [];
+            const whereClauses = [];
 
             if (startDate && endDate) {
-                query += ` WHERE spendings.dateOfSpending BETWEEN ? AND ?`;
+                whereClauses.push('spendings.dateOfSpending BETWEEN ? AND ?');
                 queryParams.push(startDate, endDate);
             }
-            query += ` ORDER BY spendings.dateOfSpending DESC`;
+
+            if (whereClauses.length > 0) {
+                query += ' WHERE ' + whereClauses.join(' AND ');
+            }
+
+            // Get total count for pagination
+            const countQuery = `SELECT COUNT(*) as count FROM spendings ${whereClauses.length > 0 ? 'WHERE ' + whereClauses.join(' AND ') : ''}`;
+            // We use a fresh params array for count (since count doesn't need LIMIT/OFFSET params)
+            // But here we can reuse queryParams since we haven't pushed limit/offset yet!
+            const countResult = await db(countQuery, queryParams);
+            const total = countResult[0].count;
+
+            const allowedSortColumns = ['dateOfSpending', 'amount'];
+            const sortBy = allowedSortColumns.includes(req.query.sortBy) ? req.query.sortBy : 'dateOfSpending';
+            const order = req.query.order?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
+            query += ` ORDER BY spendings.${sortBy} ${order} LIMIT ? OFFSET ?`;
+            queryParams.push(limit, offset);
 
             const results = await db(query, queryParams);
-            res.json(results);
+
+            res.json({
+                data: results,
+                total: total,
+                page: page,
+                totalPages: Math.ceil(total / limit)
+            });
         } catch (error) {
             console.error(error);
             res.status(500).json({ error: 'Internal Server Error' });

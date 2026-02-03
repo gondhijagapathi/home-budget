@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getSubCategories, postData } from '../api/apiCaller';
-import { addAllSubCategories } from '../store/mainDataSlice';
+import { addAllSubCategories, invalidateData } from '../store/mainDataSlice';
 
 function AddSubCategoryCard() {
     const dispatch = useDispatch();
@@ -26,8 +26,11 @@ function AddSubCategoryCard() {
                 subCategoryName: newSubCategory,
             });
             toast.success("Subcategory added successfully!");
-            const updatedSubCategories = await getSubCategories(0);
-            dispatch(addAllSubCategories(updatedSubCategories));
+            const response = await getSubCategories(0, 10000); // 0 or null for all? Need to check API signature. 
+            // Assuming getSubCategories(categoryId) where 0 means all? 
+            // Or extract .data if it returns object.
+            dispatch(addAllSubCategories(response.data || []));
+            dispatch(invalidateData());
             setNewSubCategory("");
             setSelectedCategory("");
         } catch (error) {

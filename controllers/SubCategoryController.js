@@ -3,14 +3,38 @@ const db = require('../models/dbConnection');
 const SubCategoryController = {
     getAllSubCategories: async function (req, res) {
         try {
-            let id = req.params.id;
-            let query = 'SELECT * from subCategory ORDER BY subCategoryName';
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 15;
+            const offset = (page - 1) * limit;
 
-            if (id != "0") {
-                query = 'SELECT * from subCategory WHERE categoryId = ? ORDER BY subCategoryName';
+            let id = req.params.id;
+            let query = 'SELECT * from subCategory';
+            let params = [];
+
+            let countQuery = 'SELECT COUNT(*) as count FROM subCategory';
+            let countParams = [];
+
+            if (id && id !== "0") {
+                query += ' WHERE categoryId = ?';
+                countQuery += ' WHERE categoryId = ?';
+                params.push(id);
+                countParams.push(id);
             }
-            const results = await db(query, [id]);
-            res.json(results);
+
+            query += ' ORDER BY subCategoryName LIMIT ? OFFSET ?';
+            params.push(limit, offset);
+
+            const countResult = await db(countQuery, countParams);
+            const total = countResult[0].count;
+
+            const results = await db(query, params);
+
+            res.json({
+                data: results,
+                total: total,
+                page: page,
+                totalPages: Math.ceil(total / limit)
+            });
         } catch (error) {
             console.error(error);
             res.status(500).json({ error: 'Internal Server Error' });

@@ -10,8 +10,8 @@ import { Home, Package2, PanelLeft, Settings, Moon, Sun, LineChart } from "lucid
 import AddItemDialog from "./main/AddItemDialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useTheme } from "./components/theme-provider";
-import { getCategories, getUsers, getSubCategories } from './main/api/apiCaller'; // Import API calls
-import { addCategories, addUsers, addAllSubCategories } from './main/store/mainDataSlice'; // Import Redux actions
+import { getCategories, getUsers, getSubCategories, getIncomeSources } from './main/api/apiCaller'; // Import API calls
+import { addCategories, addUsers, addAllSubCategories, addIncomeSources } from './main/store/mainDataSlice'; // Import Redux actions
 import { useDispatch } from 'react-redux'; // Import useDispatch
 
 const App = () => {
@@ -22,14 +22,20 @@ const App = () => {
     React.useEffect(() => {
         const fetchData = async () => {
             try {
-                const [categories, allSubCategories, users] = await Promise.all([
-                    getCategories(),
-                    getSubCategories(0),
-                    getUsers(),
+                // Fetch with high limit to populate "all" options for dropdowns
+                const [categoriesRes, allSubCategoriesRes, usersRes, incomeSourcesRes] = await Promise.all([
+                    getCategories(1, 1000),
+                    getSubCategories(0, 1, 1000),
+                    getUsers(1, 1000),
+                    getIncomeSources(1, 1000)
                 ]);
-                dispatch(addCategories(categories));
-                dispatch(addAllSubCategories(allSubCategories));
-                dispatch(addUsers(users));
+
+                // Backend now returns { data: [...], ... } for paginated calls.
+                // We extract .data for the Redux store which expects arrays.
+                dispatch(addCategories(categoriesRes.data || []));
+                dispatch(addAllSubCategories(allSubCategoriesRes.data || []));
+                dispatch(addUsers(usersRes.data || []));
+                dispatch(addIncomeSources(incomeSourcesRes.data || []));
             } catch (error) {
                 console.error("Failed to fetch initial data in App.js", error);
             }

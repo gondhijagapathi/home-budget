@@ -7,7 +7,10 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 8083;
 
+const schemaInit = require('./models/schemaInit');
+
 // Middleware
+
 app.use(express.json());
 
 // Health check endpoint (for Docker/load balancers)
@@ -40,6 +43,13 @@ app.use(/^(?!(\/api)).*$/, (req, res) => {
 });
 
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+// Start server after DB Init
+schemaInit().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}).catch(err => {
+  console.error('Failed to initialize database schema. Exiting...', err);
+  process.exit(1);
 });
+

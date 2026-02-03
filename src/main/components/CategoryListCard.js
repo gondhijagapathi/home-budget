@@ -20,13 +20,19 @@ import {
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getCategories, getSubCategories, deleteCategory, updateCategory } from '../api/apiCaller';
+import { getCategories, deleteCategory, updateCategory, getSubCategories } from '../api/apiCaller';
 import { addCategories, addAllSubCategories, invalidateData } from '../store/mainDataSlice';
 import DeleteConfirmationDialog from './DeleteConfirmationDialog';
+import PaginationControls from './PaginationControls';
 
 function CategoryListCard() {
     const dispatch = useDispatch();
-    const categories = useSelector(state => state.mainData.categories);
+    const lastUpdated = useSelector(state => state.mainData.lastUpdated);
+
+    // Local state for paginated table
+    const [categories, setCategories] = React.useState([]);
+    const [currentPage, setCurrentPage] = React.useState(1);
+    const [totalPages, setTotalPages] = React.useState(1);
 
     // State for editing categories
     const [editingCategoryId, setEditingCategoryId] = React.useState(null);
@@ -35,6 +41,26 @@ function CategoryListCard() {
     // State for deleting
     const [showConfirmDeleteCategoryDialog, setShowConfirmDeleteCategoryDialog] = React.useState(false);
     const [categoryToDelete, setCategoryToDelete] = React.useState(null);
+
+    const fetchCategories = React.useCallback(async () => {
+        try {
+            const response = await getCategories(currentPage, 15);
+            setCategories(response.data || []);
+            setTotalPages(response.totalPages || 1);
+        } catch (error) {
+            console.error("Failed to fetch categories", error);
+        }
+    }, [currentPage]);
+
+    React.useEffect(() => {
+        fetchCategories();
+    }, [fetchCategories]);
+
+    React.useEffect(() => {
+        if (lastUpdated) {
+            fetchCategories();
+        }
+    }, [lastUpdated, fetchCategories]);
 
     const handleEditCategoryClick = (category) => {
         setEditingCategoryId(category.categoryId);
@@ -54,9 +80,15 @@ function CategoryListCard() {
         try {
             await updateCategory(editingCategoryId, editingCategoryName);
             toast.success("Category updated successfully!");
-            const updatedCategories = await getCategories();
-            dispatch(addCategories(updatedCategories));
+
+            // 1. Refresh local table
+            await fetchCategories();
+
+            // 2. Refresh global store (for dropdowns)
+            const allCategories = await getCategories(1, 1000);
+            dispatch(addCategories(allCategories.data || []));
             dispatch(invalidateData());
+
             handleCancelEditCategory(); // Reset editing state
         } catch (error) {
             toast.error(error.message);
@@ -68,11 +100,18 @@ function CategoryListCard() {
         try {
             await deleteCategory(categoryToDelete);
             toast.success("Category deleted successfully!");
-            const updatedCategories = await getCategories();
-            dispatch(addCategories(updatedCategories));
+
+            // 1. Refresh local table
+            await fetchCategories();
+
+            // 2. Refresh global store
+            const allCategories = await getCategories(1, 1000);
+            dispatch(addCategories(allCategories.data || []));
+
+            const allSubCategories = await getSubCategories(0, 1, 1000);
+            dispatch(addAllSubCategories(allSubCategories.data || []));
+
             dispatch(invalidateData());
-            const updatedSubCategories = await getSubCategories(0);
-            dispatch(addAllSubCategories(updatedSubCategories));
         } catch (error) {
             toast.error(error.message);
         } finally {
@@ -157,6 +196,11 @@ function CategoryListCard() {
                         </TableBody>
                     </Table>
                 </div>
+                <PaginationControls
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                />
             </CardContent>
 
             <DeleteConfirmationDialog

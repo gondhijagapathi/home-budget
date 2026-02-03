@@ -7,6 +7,7 @@ export const mainDataSlice = createSlice({
     categories: [],
     subCategories: [],
     allSubCategories: [],
+    incomeSources: [],
     spendings: [],
     users: [],
     recentSpendings: [],
@@ -16,7 +17,7 @@ export const mainDataSlice = createSlice({
       message: "",
       type: "error",
     },
-    dataInvalidated: false, // New state to indicate data invalidation
+    lastUpdated: null, // Timestamp to trigger updates
   },
   reducers: {
     addDialogOpen: state => {
@@ -36,6 +37,9 @@ export const mainDataSlice = createSlice({
     },
     addAllSubCategories: (state, action) => {
       state.allSubCategories = action.payload
+    },
+    addIncomeSources: (state, action) => {
+      state.incomeSources = action.payload
     },
     addSpendings: (state, action) => {
       state.spendings = [...state.spendings, action.payload]
@@ -57,17 +61,15 @@ export const mainDataSlice = createSlice({
       state.alert.message = action.payload.message;
       state.alert.type = action.payload.type;
     },
-    invalidateData: (state) => { // New action to invalidate data
-      state.dataInvalidated = true;
+    invalidateData: (state) => {
+      state.lastUpdated = new Date().toISOString();
     },
-    resetDataInvalidated: (state) => { // New action to reset data invalidation flag
-      state.dataInvalidated = false;
-    },
+    // resetDataInvalidated removed as distinct values handle the trigger
   }
 })
 
 // Action creators are generated for each case reducer function
 export const { addDialogOpen, addDialogClose, addCategories, addSubCategories,
-  addSpendings, addUsers, clearSpendings, removeSpendings, addRecentSpendings, changeTab, addAllSubCategories, addAlert, invalidateData, resetDataInvalidated } = mainDataSlice.actions
+  addSpendings, addUsers, clearSpendings, removeSpendings, addRecentSpendings, changeTab, addAllSubCategories, addAlert, invalidateData, resetDataInvalidated, addIncomeSources } = mainDataSlice.actions
 
 export default mainDataSlice.reducer

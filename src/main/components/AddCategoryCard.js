@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { getCategories, postData } from '../api/apiCaller';
-import { addCategories } from '../store/mainDataSlice';
+import { addCategories, invalidateData } from '../store/mainDataSlice';
 
 function AddCategoryCard() {
     const dispatch = useDispatch();
@@ -20,8 +20,9 @@ function AddCategoryCard() {
         try {
             await postData('categories', { categoryName: newCategory });
             toast.success("Category added successfully!");
-            const updatedCategories = await getCategories();
-            dispatch(addCategories(updatedCategories));
+            const response = await getCategories(1, 1000);
+            dispatch(addCategories(response.data || []));
+            dispatch(invalidateData());
             setNewCategory("");
         } catch (error) {
             toast.error(error.message);

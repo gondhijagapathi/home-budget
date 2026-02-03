@@ -3,8 +3,21 @@ const db = require('../models/dbConnection');
 const CategoryController = {
     getAllCategories: async function (req, res) {
         try {
-            const results = await db('SELECT * from category ORDER BY categoryName');
-            res.json(results);
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 15;
+            const offset = (page - 1) * limit;
+
+            const countResult = await db('SELECT COUNT(*) as count FROM category');
+            const total = countResult[0].count;
+
+            const results = await db('SELECT * from category ORDER BY categoryName LIMIT ? OFFSET ?', [limit, offset]);
+
+            res.json({
+                data: results,
+                total: total,
+                page: page,
+                totalPages: Math.ceil(total / limit)
+            });
         } catch (error) {
             console.error(error);
             res.status(500).json({ error: 'Internal Server Error' });

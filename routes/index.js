@@ -7,7 +7,9 @@ const router = express.Router();
 const userController = require('../controllers/UserController');
 const categoryController = require('../controllers/CategoryController');
 const subCategoryController = require('../controllers/SubCategoryController');
+const incomeController = require('../controllers/IncomeController');
 const spendingController = require('../controllers/SpendingController');
+const backupController = require('../controllers/BackupController');
 
 router.route('/users')
   .get(userController.getAllUsers)
@@ -39,5 +41,32 @@ router.route('/spendings')
 
 router.route('/spendings/delete/:id')
   .post(spendingController.deleteSpendings);
+
+router.route('/incomeSources')
+  .get(incomeController.getIncomeSources)
+  .post(incomeController.postIncomeSource);
+
+router.route('/incomeSources/:id')
+  .put(incomeController.updateIncomeSource);
+
+router.route('/incomeSources/delete/:id')
+  .delete(incomeController.deleteIncomeSource);
+
+router.route('/incomes')
+  .get(incomeController.getIncomes)
+  .post(incomeController.postIncome);
+
+router.route('/incomes/:id')
+  .put(incomeController.updateIncome);
+
+router.route('/incomes/delete/:id')
+  .delete(incomeController.deleteIncome);
+
+// Backup Routes
+router.route('/backup')
+  .get(backupController.getBackup);
+
+router.route('/restore')
+  .post(backupController.restoreBackup);
 
 module.exports = router;
