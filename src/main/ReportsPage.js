@@ -82,6 +82,7 @@ const ReportsPage = () => {
     // Processed Data States
     const [categoryPieData, setCategoryPieData] = useState([]);
     const [subCategoryBarData, setSubCategoryBarData] = useState({ categories: [], data: [] });
+    const [categoryBarData, setCategoryBarData] = useState({ categories: [], data: [] });
     const [dailyTrendData, setDailyTrendData] = useState({ dates: [], spending: [], income: [] });
     const [sankeyData, setSankeyData] = useState([]);
     const [topTransactions, setTopTransactions] = useState([]);
@@ -121,15 +122,26 @@ const ReportsPage = () => {
         series: [{ name: 'Share', data: categoryPieData }]
     }), [baseChartOptions, categoryPieData]);
 
-    const barChartOptions = useMemo(() => ({
-        ...baseChartOptions,
-        chart: { ...baseChartOptions.chart, type: 'bar', height: 300 },
-        title: { text: 'Top 5 Expenses', ...baseChartOptions.title, style: { fontSize: '16px' } },
-        xAxis: { ...baseChartOptions.xAxis, categories: subCategoryBarData.categories },
-        yAxis: { ...baseChartOptions.yAxis, title: { text: 'Amount' } },
-        legend: { enabled: false },
-        series: [{ name: 'Amount', data: subCategoryBarData.data }]
-    }), [baseChartOptions, subCategoryBarData]);
+    const createBarChartOptions = (title, data, color) => {
+        const dynamicHeight = Math.max(300, data.categories.length * 30);
+        return {
+            ...baseChartOptions,
+            chart: { ...baseChartOptions.chart, type: 'bar', height: dynamicHeight },
+            title: { text: title, ...baseChartOptions.title, style: { fontSize: '16px' } },
+            xAxis: { ...baseChartOptions.xAxis, categories: data.categories },
+            yAxis: { ...baseChartOptions.yAxis, title: { text: 'Amount' } },
+            legend: { enabled: false },
+            series: [{ name: 'Amount', data: data.data, color: color }]
+        };
+    };
+
+    const subCategoryChartOptions = useMemo(() =>
+        createBarChartOptions('Expenses by Subcategory', subCategoryBarData, '#3b82f6')
+        , [baseChartOptions, subCategoryBarData]);
+
+    const categoryChartOptions = useMemo(() =>
+        createBarChartOptions('Expenses by Category', categoryBarData, '#f59e0b')
+        , [baseChartOptions, categoryBarData]);
 
     const lineChartOptions = useMemo(() => ({
         ...baseChartOptions,
@@ -216,12 +228,13 @@ const ReportsPage = () => {
                     // --- Processing for Charts (using expensesData) ---
                     // processChartData now takes (expenses, allSpendings, incomes)
                     // We pass 'allSpendData' (raw fetch result) for the Line Chart (Spending Trends)
-                    const { pieData, barData, lineData } = processChartData(expensesData, allSpendData, incomeData);
+                    const { pieData, subCategoryBarData, categoryBarData, lineData } = processChartData(expensesData, allSpendData, incomeData);
                     // Financial Flow should show ALL data (Expenses + Investments + Asset Building)
                     const sankeyLinks = processSankeyData(allSpendData, incomeData);
 
                     setCategoryPieData(pieData);
-                    setSubCategoryBarData(barData);
+                    setSubCategoryBarData(subCategoryBarData);
+                    setCategoryBarData(categoryBarData);
                     setDailyTrendData(lineData);
                     setSankeyData(sankeyLinks);
 
@@ -328,16 +341,23 @@ const ReportsPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
 
-                <Card>
+                <Card className="md:col-span-2">
                     <CardHeader><CardTitle>Spending by Category</CardTitle></CardHeader>
                     <CardContent>
                         <HighchartsReact highcharts={Highcharts} options={pieChartOptions} />
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader><CardTitle>Top Expenses</CardTitle></CardHeader>
+                    <CardHeader><CardTitle>Expenses by Category</CardTitle></CardHeader>
                     <CardContent>
-                        <HighchartsReact highcharts={Highcharts} options={barChartOptions} />
+                        <HighchartsReact highcharts={Highcharts} options={categoryChartOptions} />
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader><CardTitle>Expenses by Subcategory</CardTitle></CardHeader>
+                    <CardContent>
+                        <HighchartsReact highcharts={Highcharts} options={subCategoryChartOptions} />
                     </CardContent>
                 </Card>
                 <Card className="md:col-span-2">

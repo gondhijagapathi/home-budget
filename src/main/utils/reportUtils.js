@@ -6,12 +6,20 @@ import { format, differenceInDays } from 'date-fns';
  * @returns {Object} { expenses, investments, assetBuilding }
  */
 export const separateTransactions = (allSpendData) => {
-    // Normalizing category check to handle potential typos ("Assert" vs "Asset") in DB
-    const isAssetBuilding = (name) => name === 'Assert Building' || name === 'Asset Building';
+    // Normalizing category check to handle potential typos ("Assert" vs "Asset") in DB and case sensitivity
+    const normalize = (str) => str ? str.trim().toLowerCase() : '';
 
-    const expenses = allSpendData.filter(item => item.categoryName !== 'Investments' && !isAssetBuilding(item.categoryName));
-    const investments = allSpendData.filter(item => item.categoryName === 'Investments');
+    const isAssetBuilding = (name) => {
+        const n = normalize(name);
+        return n == 'asset building';
+    };
+
+    const isInvestment = (name) => normalize(name) === 'investments';
+
+    const expenses = allSpendData.filter(item => !isInvestment(item.categoryName) && !isAssetBuilding(item.categoryName));
+    const investments = allSpendData.filter(item => isInvestment(item.categoryName));
     const assetBuilding = allSpendData.filter(item => isAssetBuilding(item.categoryName));
+
     return { expenses, investments, assetBuilding };
 };
 
@@ -30,8 +38,9 @@ export const calculateKPIs = (spendings, investments, assetBuilding, incomes, da
     const totalAssetBuilding = assetBuilding.reduce((acc, item) => acc + item.amount, 0);
     const totalIncome = incomes.reduce((acc, item) => acc + item.amount, 0);
 
-    // Net Savings: Income - Expenses (Traditional definition, usually implies what's left for Savings/Inv)
-    const netSavings = totalIncome - totalSpend;
+    // Net Savings: Income - (Expenses + Asset Building)
+    // As per request, Asset Building is removed from Net Savings (i.e. treated as an expense in this context)
+    const netSavings = totalIncome - totalSpend - totalAssetBuilding;
 
     // Cash Available: Income - (Expenses + Investments + Asset Building)
     const cashAvailable = totalIncome - (totalSpend + totalInvestments + totalAssetBuilding);
@@ -70,15 +79,23 @@ export const processChartData = (expenses, allSpendings, incomes) => {
     });
     const pieData = Object.entries(categoryMap).map(([name, y]) => ({ name, y }));
 
-    // 2. Bar Chart (Top 5 Subcategories) - Uses Filtered Expenses
+    // 2. Bar Chart (Subcategories) - Uses Filtered Expenses
     const subCategoryMap = {};
     expenses.forEach(item => {
         subCategoryMap[item.subCategoryName] = (subCategoryMap[item.subCategoryName] || 0) + item.amount;
     });
-    const sortedSubCats = Object.entries(subCategoryMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
-    const barData = {
+    const sortedSubCats = Object.entries(subCategoryMap).sort((a, b) => b[1] - a[1]); // All Subcategories
+    const subCategoryBarData = {
         categories: sortedSubCats.map(i => i[0]),
         data: sortedSubCats.map(i => i[1])
+    };
+
+    // 3. Bar Chart (Categories) - Uses Filtered Expenses
+    // We already have categoryMap from Pie chart step, re-use it or sort it for Bar chart
+    const sortedCats = Object.entries(categoryMap).sort((a, b) => b[1] - a[1]);
+    const categoryBarData = {
+        categories: sortedCats.map(i => i[0]),
+        data: sortedCats.map(i => i[1])
     };
 
     // 3. Line Chart (Cash Flow: Income vs Spending) - Uses ALL Spendings (Inv + Asset Building included)
@@ -118,7 +135,7 @@ export const processChartData = (expenses, allSpendings, incomes) => {
         income: cumulativeIncome
     };
 
-    return { pieData, barData, lineData };
+    return { pieData, subCategoryBarData, categoryBarData, lineData };
 };
 
 /**
