@@ -8,6 +8,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Home, Package2, PanelLeft, Settings, Moon, Sun, LineChart } from "lucide-react";
 import AddItemDialog from "./main/AddItemDialog";
+import UploadReceipts from "./main/UploadReceipts";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useTheme } from "./components/theme-provider";
 import { getCategories, getUsers, getSubCategories, getIncomeSources } from './main/api/apiCaller'; // Import API calls
@@ -129,6 +130,7 @@ const App = () => {
                             <Route path="/" element={<DashBoard />} />
                             <Route path="/reports" element={<ReportsPage />} />
                             <Route path="/manage" element={<EditDatabase />} />
+                            <Route path="/upload-receipts" element={<UploadReceipts />} />
                         </Routes>
                     </main>
                 </div>

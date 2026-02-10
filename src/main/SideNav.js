@@ -4,6 +4,7 @@ import {
     Settings,
     Package2,
     LineChart,
+    UploadCloud,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +22,11 @@ const SideNav = () => {
             href: "/reports",
             label: "Reports",
             icon: LineChart,
+        },
+        {
+            href: "/upload-receipts",
+            label: "Import Bank Statement",
+            icon: UploadCloud,
         },
         {
             href: "/manage",

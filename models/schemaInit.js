@@ -70,7 +70,20 @@ const definedTables = [
     { name: 'subCategory', query: createSubCategoryTable },
     { name: 'spendings', query: createSpendingsTable },
     { name: 'incomeSource', query: createIncomeSourceTable },
-    { name: 'income', query: createIncomeTable }
+    { name: 'income', query: createIncomeTable },
+    {
+        name: 'ai_insights', query: `
+        CREATE TABLE IF NOT EXISTS ai_insights (
+            insightId VARCHAR(200) NOT NULL,
+            userId VARCHAR(200),
+            dateOfInsight DATE NOT NULL,
+            content TEXT,
+            createdAt DATETIME,
+            PRIMARY KEY (insightId),
+            KEY (userId),
+            KEY (dateOfInsight)
+        )`
+    }
 ];
 
 const triggersExact = [
@@ -103,6 +116,11 @@ const triggersExact = [
         name: 'income_trigger',
         drop: 'DROP TRIGGER IF EXISTS income_trigger',
         create: `CREATE TRIGGER income_trigger BEFORE INSERT ON income FOR EACH ROW BEGIN IF NEW.incomeId IS NULL OR NEW.incomeId = '' THEN SET NEW.incomeId = UUID(); END IF; END`
+    },
+    {
+        name: 'ai_insights_trigger',
+        drop: 'DROP TRIGGER IF EXISTS ai_insights_trigger',
+        create: `CREATE TRIGGER ai_insights_trigger BEFORE INSERT ON ai_insights FOR EACH ROW BEGIN IF NEW.insightId IS NULL OR NEW.insightId = '' THEN SET NEW.insightId = UUID(); END IF; END`
     }
 ];
 

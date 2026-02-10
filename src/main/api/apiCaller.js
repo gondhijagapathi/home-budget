@@ -1,16 +1,16 @@
 
 
-async function apiCall(method, url, data = null) {
+async function apiCall(method, url, data = null, isFormData = false) {
   try {
     const options = {
       method,
-      headers: {
+      headers: isFormData ? {} : {
         'Content-Type': 'application/json',
       },
     };
 
     if (data) {
-      options.body = JSON.stringify(data);
+      options.body = isFormData ? data : JSON.stringify(data);
     }
 
     const response = await fetch(url, options);
@@ -150,5 +150,15 @@ export async function downloadBackup() {
 
 export function restoreBackup(data) {
   return apiCall('POST', '/api/restore', data);
+}
+
+export function uploadReceipt(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  return apiCall('POST', '/api/upload-receipt', formData, true);
+}
+
+export function getAdvisorInsight(userId, refresh = false) {
+  return apiCall('GET', `/api/advisor/insight?userId=${userId}&refresh=${refresh}`);
 }
 

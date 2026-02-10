@@ -10,6 +10,11 @@ const subCategoryController = require('../controllers/SubCategoryController');
 const incomeController = require('../controllers/IncomeController');
 const spendingController = require('../controllers/SpendingController');
 const backupController = require('../controllers/BackupController');
+const uploadController = require('../controllers/UploadController');
+const advisorController = require('../controllers/AdvisorController');
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/' });
+
 
 router.route('/users')
   .get(userController.getAllUsers)
@@ -68,5 +73,10 @@ router.route('/backup')
 
 router.route('/restore')
   .post(backupController.restoreBackup);
+
+// Upload Route
+router.post('/upload-receipt', upload.single('file'), uploadController.uploadReceipt);
+
+router.get('/advisor/insight', advisorController.getInsight);
 
 module.exports = router;
