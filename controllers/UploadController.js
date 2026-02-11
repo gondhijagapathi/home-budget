@@ -61,7 +61,7 @@ exports.uploadReceipt = async (req, res) => {
     `;
 
         const result = await genAI.models.generateContent({
-            model: "gemini-2.0-flash",
+            model: "gemini-2.5-flash",
             contents: [
                 {
                     parts: [
@@ -110,6 +110,18 @@ exports.uploadReceipt = async (req, res) => {
 
         // Clean up uploaded file
         fs.unlinkSync(filePath);
+
+        // Log Usage
+        if (result && result.response && result.response.usageMetadata) {
+            const { promptTokenCount, candidatesTokenCount } = result.response.usageMetadata;
+            const logGeminiUsage = require('../models/usageLogger');
+            await logGeminiUsage("gemini-2.5-flash", promptTokenCount, candidatesTokenCount, "Receipt Upload");
+        } else if (result && result.usageMetadata) {
+            // New SDK might return it directly on result
+            const { promptTokenCount, candidatesTokenCount } = result.usageMetadata;
+            const logGeminiUsage = require('../models/usageLogger');
+            await logGeminiUsage("gemini-2.5-flash", promptTokenCount, candidatesTokenCount, "Receipt Upload");
+        }
 
         res.json({
             transactions,

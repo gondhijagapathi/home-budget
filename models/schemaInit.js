@@ -83,6 +83,20 @@ const definedTables = [
             KEY (userId),
             KEY (dateOfInsight)
         )`
+    },
+    {
+        name: 'gemini_usage', query: `
+        CREATE TABLE IF NOT EXISTS gemini_usage (
+            usageId VARCHAR(200) NOT NULL,
+            model VARCHAR(100),
+            inputTokens INT,
+            outputTokens INT,
+            totalTokens INT,
+            purpose VARCHAR(255),
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (usageId),
+            KEY (timestamp)
+        )`
     }
 ];
 
@@ -121,6 +135,11 @@ const triggersExact = [
         name: 'ai_insights_trigger',
         drop: 'DROP TRIGGER IF EXISTS ai_insights_trigger',
         create: `CREATE TRIGGER ai_insights_trigger BEFORE INSERT ON ai_insights FOR EACH ROW BEGIN IF NEW.insightId IS NULL OR NEW.insightId = '' THEN SET NEW.insightId = UUID(); END IF; END`
+    },
+    {
+        name: 'gemini_usage_trigger',
+        drop: 'DROP TRIGGER IF EXISTS gemini_usage_trigger',
+        create: `CREATE TRIGGER gemini_usage_trigger BEFORE INSERT ON gemini_usage FOR EACH ROW BEGIN IF NEW.usageId IS NULL OR NEW.usageId = '' THEN SET NEW.usageId = UUID(); END IF; END`
     }
 ];
 

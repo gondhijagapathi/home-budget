@@ -6,6 +6,7 @@ import SubCategoryListCard from './components/SubCategoryListCard';
 import AddIncomeSourceCard from './components/AddIncomeSourceCard';
 import IncomeSourceListCard from './components/IncomeSourceListCard';
 import BackupRestoreCard from './components/BackupRestoreCard';
+import GeminiUsage from './GeminiUsage';
 
 function EditDatabase() {
     return (
@@ -33,6 +34,11 @@ function EditDatabase() {
             {/* Backup & Restore - Full width independent card */}
             <div className="w-full">
                 <BackupRestoreCard />
+            </div>
+
+            {/* Gemini Usage Utils */}
+            <div className="w-full">
+                <GeminiUsage />
             </div>
 
         </div >

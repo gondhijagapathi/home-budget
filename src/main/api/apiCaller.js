@@ -162,3 +162,7 @@ export function getAdvisorInsight(userId, refresh = false) {
   return apiCall('GET', `/api/advisor/insight?userId=${userId}&refresh=${refresh}`);
 }
 
+export function getUsageStats() {
+  return apiCall('GET', '/api/usage');
+}
+

@@ -8,40 +8,24 @@ const getTodayDate = () => new Date().toLocaleDateString('en-CA');
 const systemInstruction = `
 You are Jagapathi and Sravani dedicated Financial Architect AI. Your goal is to provide hyper-personalized, actionable financial advice based on his specific life goals and current transaction data.
 
-USER PROFILE (Jagapathi):
-- **Role:** Tech enthusiast, Developer (React/Node), Home Server builder (Arch Linux).
-- **Family:** Married.
-- **Short-Term Goal:** Buying a Mahindra BE 6e (EV).
-- **Long-Term Goal:** Buying a plot of land/house in ~10 years.
-- **Hobbies:** Valorant, Personal Finance, AI Projects.
-
-USER PROFILE (Sravani):
-- **Role:** Developer (C++, Phython).
-- **Family:** Married.
-- **Short-Term Goal:** Buying gold.
-- **Long-Term Goal:** Buying a plot of land/house in ~10 years.
-- **Hobbies:** Personal Finance, Reading books, fasion.
-
-CURRENT FINANCIAL CONTEXT (Feb 10, 2026):
+CURRENT FINANCIAL CONTEXT:
 - **Data Status:** We have 2 months of history.
-- Ignore "Asset Building" (or "Assert building") Category because this has home loan emi and one time spening of contruction of home.
+- Ignore "Asset Building" Category because this has home loan emi and one time spening of contruction of home.
 - **Sensitivity:** Jagapathi and Sravani hate calculation errors. Be precise. If unsure, estimate ranges.
 
 YOUR INSTRUCTIONS:
-1. **Analyze the "Now":** Look at the latest transactions. Are they "Needs" (Groceries/Bills) or "Project Costs" (Server parts/AI hardware)?
-2. **Contextualize with Goals:** - If spending is *high*, warn him: "This affects the Mahindra BE 6e timeline."
-   - If spending is *low*, encourage him: "Great job, this frees up cash for the land fund."
+1. **Analyze the "Now":** Look at the latest transactions. Are they "Needs" (Groceries/Bills) or "Outside Food"?
+2. **Contextualize with Goals:** - If spending is *high*, warn them: "This affects the future house timeline."
+   - If spending is *low*, encourage them: "Great job, this frees up cash for the future house."
 3. **Compare & Predict:**
    - **Spending Speed:** Compare current spending vs Same Day Last Month (e.g., "You are ₹5k ahead of last month!").
    - **Forecast:** Estimating end-of-month spending based on current daily average.
-4. **Tone:** Witty, tech-savvy, and direct. Use gaming terms (e.g., "cooldown", "nerf spending") if appropriate.
+4. **Tone:** Witty, tech-savvy, and direct.
 5. **Actionable Output:** - Start with a "Verdict" (Safe/Warning).
    - Give 1 specific action item.
-   - Mention a relevant goal.
 
 OUTPUT FORMAT:
-Provide the response as a clear, plain-text paragraph followed by two bullet points. No JSON.
-`;
+Provide the response as a clear, plain-text paragraph. No JSON.`;
 
 const tools = [
     {
@@ -88,19 +72,37 @@ exports.getInsight = async (req, res) => {
 
         const genAI = new GoogleGenAI({ apiKey });
 
+        // Compressed System Instruction
+        const compressedSystemInstruction = `
+Role: Financial Architect AI for Jagapathi & Sravani.
+Goal: Provide hyper-personalized, actionable financial advice.
+Context:
+- 2 months of transaction history.
+- Ignore "Asset Building" category (construction/EMI).
+- Be precise with numbers.
+
+Instructions:
+1. Analyze recent spending: Distinguish "Needs" vs "Wants".
+2. Contextualize: High spending risks the "Future House Goal". Low spending boosts it.
+3. Compare: Use "Same Day Last Month" for speed checks. Forecast end-of-month.
+4. Tone: Witty, tech-savvy, direct. Don't be generic.
+5. Output:
+   - Start with a "Verdict" (Sage/Warning).
+   - One distinct Action Item.
+   - Plain text paragraph only. NO JSON.`;
+
         // Initial Message
         let contents = [
             { role: "user", parts: [{ text: `Today is ${today}. Analyze the current financial situation.` }] }
         ];
 
-        // Config Structure
+        // Config with Compressed Instructions
         // @google/genai SDK v0.1+ expects 'config' object for systemInstruction and tools
-        // AND systemInstruction must be { parts: [{ text: ... }] }
         let reqBody = {
             model: "gemini-2.5-flash",
             config: {
                 systemInstruction: {
-                    parts: [{ text: systemInstruction }]
+                    parts: [{ text: compressedSystemInstruction }]
                 },
                 tools: tools
             },
@@ -109,13 +111,20 @@ exports.getInsight = async (req, res) => {
 
         const MAX_TURNS = 5;
         let finalResponseText = "";
+        let totalInputTokens = 0;
+        let totalOutputTokens = 0;
 
         for (let i = 0; i < MAX_TURNS; i++) {
             // Call API
-            // Note: We need to update contents for each turn if not mutated by reference (it is mutated, but strictly re-assigning here just in case)
+            // Note: We need to update contents for each turn
             reqBody.contents = contents;
 
             const result = await genAI.models.generateContent(reqBody);
+
+            if (result.usageMetadata) {
+                totalInputTokens += result.usageMetadata.promptTokenCount || 0;
+                totalOutputTokens += result.usageMetadata.candidatesTokenCount || 0;
+            }
 
             // Extract Candidate
             const candidate = result.candidates[0];
@@ -206,6 +215,12 @@ exports.getInsight = async (req, res) => {
         await db('DELETE FROM ai_insights WHERE userId = ? AND dateOfInsight = ?', [userId, today]);
         await db('INSERT INTO ai_insights (insightId, userId, dateOfInsight, content, createdAt) VALUES (?, ?, ?, ?, NOW())',
             [uuid(), userId, today, insightText]);
+
+        // Log Usage
+        if (totalInputTokens > 0) {
+            const logGeminiUsage = require('../models/usageLogger');
+            await logGeminiUsage("gemini-2.5-flash", totalInputTokens, totalOutputTokens, "Advisor Insight");
+        }
 
         res.json({ insight: insightText, cached: false });
 
