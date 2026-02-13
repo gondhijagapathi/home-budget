@@ -4,11 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { uploadReceipt, postData, getRecentSpendings } from './api/apiCaller';
+import { financeService } from '../services/financeService';
 import { toast } from "sonner";
 import { Loader2, Trash2, Check, X } from "lucide-react";
 import { useSelector, useDispatch } from 'react-redux';
-import { addRecentSpendings, invalidateData } from './store/mainDataSlice';
+import { setRecentSpendings, invalidateData } from '../store/financeSlice';
 import uuid from 'react-uuid';
 import { format } from "date-fns";
 
@@ -29,10 +29,10 @@ const UploadReceipts = () => {
     const [debugInfo, setDebugInfo] = useState(null);
 
     const dispatch = useDispatch();
-    const categories = useSelector(state => state.mainData.categories);
-    const allSubCategories = useSelector(state => state.mainData.allSubCategories);
-    const users = useSelector(state => state.mainData.users);
-    const incomeSources = useSelector(state => state.mainData.incomeSources);
+    const categories = useSelector(state => state.finance.categories);
+    const allSubCategories = useSelector(state => state.finance.allSubCategories);
+    const users = useSelector(state => state.user.users);
+    const incomeSources = useSelector(state => state.finance.incomeSources);
 
     const handleFileChange = (e) => {
         if (e.target.files && e.target.files[0]) {
@@ -48,7 +48,7 @@ const UploadReceipts = () => {
 
         setUploading(true);
         try {
-            const response = await uploadReceipt(fileState);
+            const response = await financeService.uploadReceipt(fileState);
             console.log("Upload response:", response);
             if (response.transactions) {
                 const itemsWithIds = response.transactions.map(item => {
@@ -158,7 +158,7 @@ const UploadReceipts = () => {
                     momentFormat(item.date),
                     item.categoryId
                 ];
-                await postData('spendings', { data: dataToSave });
+                await financeService.addSpending({ data: dataToSave });
             } else {
                 // Income
                 if (!item.incomeSourceId) {
@@ -172,15 +172,15 @@ const UploadReceipts = () => {
                     dateOfIncome: momentFormat(item.date),
                     description: item.description || ""
                 };
-                await postIncome(incomeData);
+                await financeService.addIncome(incomeData);
             }
 
             toast.success("Item saved!");
             handleRemoveItem(item.id);
 
             dispatch(invalidateData());
-            const response = await getRecentSpendings(1, 10);
-            dispatch(addRecentSpendings(response.data || []));
+            const response = await financeService.getRecentSpendings(1, 10);
+            dispatch(setRecentSpendings(response.data || []));
 
         } catch (error) {
             console.error("Save failed", error);

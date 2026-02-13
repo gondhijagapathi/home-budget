@@ -2,10 +2,10 @@ import React, { useState, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, Upload, AlertTriangle, Loader2 } from 'lucide-react';
-import { downloadBackup, restoreBackup } from '../api/apiCaller';
+import { financeService } from '../../../services/financeService';
 import { toast } from 'sonner';
 import { useDispatch } from 'react-redux';
-import { invalidateData } from '../store/mainDataSlice';
+import { invalidateData } from '../../../store/financeSlice';
 import {
     Dialog,
     DialogContent,
@@ -25,7 +25,7 @@ const BackupRestoreCard = () => {
     const handleDownload = async () => {
         try {
             toast.info('Starting backup download...');
-            await downloadBackup();
+            await financeService.downloadBackup();
             toast.success('Backup downloaded successfully');
         } catch (error) {
             toast.error('Failed to download backup');
@@ -57,7 +57,7 @@ const BackupRestoreCard = () => {
         setShowConfirm(false);
         setLoading(true);
         try {
-            await restoreBackup(restoreData);
+            await financeService.restoreBackup(restoreData);
             toast.success('Database restored successfully! Reloading...');
             dispatch(invalidateData()); // Trigger UI refresh
 

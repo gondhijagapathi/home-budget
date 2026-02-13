@@ -16,8 +16,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDispatch, useSelector } from 'react-redux';
-import { postData, getRecentSpendings, postIncome } from './api/apiCaller';
-import { addRecentSpendings, invalidateData } from './store/mainDataSlice';
+import { financeService } from '../services/financeService';
+import { setRecentSpendings, invalidateData } from '../store/financeSlice';
 import { toast } from "sonner";
 import uuid from 'react-uuid';
 
@@ -42,10 +42,10 @@ export default function AddItemDialog() {
     const [description, setDescription] = React.useState("");
 
     // Redux Data
-    const categories = useSelector(state => state.mainData.categories);
-    const allSubCategories = useSelector(state => state.mainData.allSubCategories);
-    const users = useSelector(state => state.mainData.users);
-    const incomeSources = useSelector(state => state.mainData.incomeSources);
+    const categories = useSelector(state => state.finance.categories);
+    const allSubCategories = useSelector(state => state.finance.allSubCategories);
+    const users = useSelector(state => state.user.users);
+    const incomeSources = useSelector(state => state.finance.incomeSources);
 
     React.useEffect(() => {
         if (users.length > 0 && selectedUser === null) {
@@ -86,11 +86,11 @@ export default function AddItemDialog() {
                     format(selectedDate, "yyyy-MM-dd HH:mm:ss"),
                     selectedCategory,
                 ];
-                await postData('spendings', { data });
+                await financeService.addSpending({ data });
 
                 // Refresh spendings
-                const response = await getRecentSpendings(1, 10);
-                dispatch(addRecentSpendings(response.data || []));
+                const response = await financeService.getRecentSpendings(1, 10);
+                dispatch(setRecentSpendings(response.data || []));
             } else {
                 // Income
                 if (!selectedIncomeSource) {
@@ -105,7 +105,7 @@ export default function AddItemDialog() {
                     dateOfIncome: format(selectedDate, "yyyy-MM-dd HH:mm:ss"),
                     description: description || ""
                 };
-                await postIncome(incomeData);
+                await financeService.addIncome(incomeData);
             }
 
             toast.success(`${transactionType === 'expense' ? 'Spending' : 'Income'} added successfully!`);

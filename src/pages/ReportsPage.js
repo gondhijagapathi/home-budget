@@ -4,18 +4,18 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { IndianRupee, Camera, ArrowUpCircle, ArrowDownCircle, Wallet } from 'lucide-react';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 import { addDays, format } from 'date-fns';
-import { calculateKPIs, processChartData, processSankeyData, separateTransactions } from './utils/reportUtils';
-import { getSpendingsByDateRange, getIncomes } from './api/apiCaller';
+import { calculateKPIs, processChartData, processSankeyData, separateTransactions } from '../utils/reportUtils';
+import { financeService } from '../services/financeService';
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
 import HighchartsSankey from 'highcharts/modules/sankey';
 import { useTheme } from '@/components/theme-provider';
-import { getHighchartsTheme } from './highchartsTheme';
+import { getHighchartsTheme } from '../utils/highchartsTheme';
 
 import { toPng } from 'html-to-image';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import PaginationControls from './components/PaginationControls';
+import PaginationControls from '../components/PaginationControls';
 
 function resolveTheme(theme) {
     if (theme === 'dark' || theme === 'light') return theme;
@@ -24,7 +24,7 @@ function resolveTheme(theme) {
 
 const ReportsPage = () => {
     const dispatch = useDispatch();
-    const lastUpdated = useSelector(state => state.mainData.lastUpdated);
+    const lastUpdated = useSelector(state => state.finance.lastUpdated);
     const { theme } = useTheme();
     const resolvedTheme = useMemo(() => resolveTheme(theme), [theme]);
 
@@ -204,7 +204,7 @@ const ReportsPage = () => {
 
                 try {
                     // Fetch Spendings (High limit for analytics)
-                    const spendResponse = await getSpendingsByDateRange(formattedStartDate, formattedEndDate, 1, 10000);
+                    const spendResponse = await financeService.getSpendingsByDateRange(formattedStartDate, formattedEndDate, 1, 10000);
                     const allSpendData = spendResponse.data || [];
 
                     // Separate Investments and Expenses
@@ -220,7 +220,7 @@ const ReportsPage = () => {
                     setTopTransactions(sortedExpenses);
 
                     // Fetch Incomes (High limit for analytics)
-                    const incomeResponse = await getIncomes(formattedStartDate, formattedEndDate, 1, 10000);
+                    const incomeResponse = await financeService.getIncomes(formattedStartDate, formattedEndDate, 1, 10000);
                     const incomeData = incomeResponse.data || [];
                     setIncomes(incomeData);
 

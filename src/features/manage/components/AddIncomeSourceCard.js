@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { postIncomeSource, getIncomeSources } from '../api/apiCaller';
-import { addIncomeSources, invalidateData } from '../store/mainDataSlice';
+import { financeService } from '../../../services/financeService';
+import { setIncomeSources, invalidateData } from '../../../store/financeSlice';
 
 function AddIncomeSourceCard() {
     const dispatch = useDispatch();
@@ -18,12 +18,12 @@ function AddIncomeSourceCard() {
             return;
         }
         try {
-            await postIncomeSource(newSource);
+            await financeService.addIncomeSource(newSource);
             toast.success("Income source added!");
 
             // Refresh global store
-            const updatedSources = await getIncomeSources(1, 1000);
-            dispatch(addIncomeSources(updatedSources.data || []));
+            const updatedSources = await financeService.getIncomeSources(1, 1000);
+            dispatch(setIncomeSources(updatedSources.data || []));
             dispatch(invalidateData());
 
             setNewSource("");

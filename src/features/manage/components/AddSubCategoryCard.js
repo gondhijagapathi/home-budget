@@ -6,12 +6,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getSubCategories, postData } from '../api/apiCaller';
-import { addAllSubCategories, invalidateData } from '../store/mainDataSlice';
+import { financeService } from '../../../services/financeService';
+import { setAllSubCategories, invalidateData } from '../../../store/financeSlice';
 
 function AddSubCategoryCard() {
     const dispatch = useDispatch();
-    const categories = useSelector(state => state.mainData.categories);
+    const categories = useSelector(state => state.finance.categories);
     const [newSubCategory, setNewSubCategory] = React.useState("");
     const [selectedCategory, setSelectedCategory] = React.useState("");
 
@@ -21,15 +21,12 @@ function AddSubCategoryCard() {
             return;
         }
         try {
-            await postData(`subCategories/${selectedCategory}`, {
-                categoryId: selectedCategory,
-                subCategoryName: newSubCategory,
-            });
+            await financeService.addSubCategory(selectedCategory, newSubCategory);
             toast.success("Subcategory added successfully!");
-            const response = await getSubCategories(0, 10000); // 0 or null for all? Need to check API signature. 
+            const response = await financeService.getSubCategories(0, 10000);
             // Assuming getSubCategories(categoryId) where 0 means all? 
             // Or extract .data if it returns object.
-            dispatch(addAllSubCategories(response.data || []));
+            dispatch(setAllSubCategories(response.data || []));
             dispatch(invalidateData());
             setNewSubCategory("");
             setSelectedCategory("");

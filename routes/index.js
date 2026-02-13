@@ -11,7 +11,6 @@ const incomeController = require('../controllers/IncomeController');
 const spendingController = require('../controllers/SpendingController');
 const backupController = require('../controllers/BackupController');
 const uploadController = require('../controllers/UploadController');
-const advisorController = require('../controllers/AdvisorController');
 const usageController = require('../controllers/UsageController');
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
@@ -77,8 +76,6 @@ router.route('/restore')
 
 // Upload Route
 router.post('/upload-receipt', upload.single('file'), uploadController.uploadReceipt);
-
-router.get('/advisor/insight', advisorController.getInsight);
 
 router.get('/usage', usageController.getUsageStats);
 

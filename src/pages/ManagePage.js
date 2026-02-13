@@ -1,12 +1,13 @@
 import * as React from 'react';
-import AddCategoryCard from './components/AddCategoryCard';
-import AddSubCategoryCard from './components/AddSubCategoryCard';
-import CategoryListCard from './components/CategoryListCard';
-import SubCategoryListCard from './components/SubCategoryListCard';
-import AddIncomeSourceCard from './components/AddIncomeSourceCard';
-import IncomeSourceListCard from './components/IncomeSourceListCard';
-import BackupRestoreCard from './components/BackupRestoreCard';
-import GeminiUsage from './GeminiUsage';
+import AddCategoryCard from '../features/manage/components/AddCategoryCard';
+import AddSubCategoryCard from '../features/manage/components/AddSubCategoryCard';
+import CategoryListCard from '../features/manage/components/CategoryListCard';
+import SubCategoryListCard from '../features/manage/components/SubCategoryListCard';
+import AddIncomeSourceCard from '../features/manage/components/AddIncomeSourceCard';
+import IncomeSourceListCard from '../features/manage/components/IncomeSourceListCard';
+import BackupRestoreCard from '../features/manage/components/BackupRestoreCard';
+import GeminiUsageStats from '../features/manage/components/GeminiUsageStats';
+
 
 function EditDatabase() {
     return (
@@ -38,8 +39,10 @@ function EditDatabase() {
 
             {/* Gemini Usage Utils */}
             <div className="w-full">
-                <GeminiUsage />
+                <GeminiUsageStats />
             </div>
+
+
 
         </div >
     );

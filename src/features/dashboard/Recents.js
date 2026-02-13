@@ -24,24 +24,18 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import {
-    deleteSpending,
-    getRecentSpendings,
-    getIncomes,
-    deleteIncome,
-    updateIncome
-} from './api/apiCaller';
-import { addRecentSpendings, invalidateData, resetDataInvalidated } from './store/mainDataSlice';
-import PaginationControls from './components/PaginationControls';
-import DeleteConfirmationDialog from './components/DeleteConfirmationDialog';
+import { financeService } from '../../services/financeService';
+import { setRecentSpendings, invalidateData } from '../../store/financeSlice';
+import PaginationControls from '../../components/PaginationControls';
+import DeleteConfirmationDialog from '../../components/DeleteConfirmationDialog';
 
 function Recents() {
     const dispatch = useDispatch();
-    const lastUpdated = useSelector(state => state.mainData.lastUpdated);
+    const lastUpdated = useSelector(state => state.finance.lastUpdated);
 
     // Global Data for Dropdowns (for editing Income)
-    const incomeSources = useSelector(state => state.mainData.incomeSources);
-    const users = useSelector(state => state.mainData.users);
+    const incomeSources = useSelector(state => state.finance.incomeSources);
+    const users = useSelector(state => state.user.users);
 
     const [activeTab, setActiveTab] = React.useState("expenses");
 
@@ -69,11 +63,9 @@ function Recents() {
     // --- FETCH FUNCTIONS ---
     const fetchExpenses = React.useCallback(async () => {
         try {
-            const res = await getRecentSpendings(expensesPage, 15);
+            const res = await financeService.getRecentSpendings(expensesPage, 15);
             setExpenses(res.data || []);
             setExpensesTotalPages(res.totalPages || 1);
-            // We also update Redux for legacy reasons if needed, but local state is better for pagination
-            // dispatch(addRecentSpendings(res.data || [])); 
         } catch (error) {
             console.error(error);
             toast.error("Failed to fetch expenses");
@@ -82,7 +74,7 @@ function Recents() {
 
     const fetchIncomes = React.useCallback(async () => {
         try {
-            const res = await getIncomes(null, null, incomesPage, 15);
+            const res = await financeService.getIncomes(null, null, incomesPage, 15);
             setIncomes(res.data || []);
             setIncomesTotalPages(res.totalPages || 1);
         } catch (error) {
@@ -114,7 +106,7 @@ function Recents() {
     const confirmDeleteExpense = async () => {
         if (!expenseToDelete) return;
         try {
-            await deleteSpending(expenseToDelete);
+            await financeService.deleteSpending(expenseToDelete);
             toast.success("Expense deleted");
             await fetchExpenses();
             dispatch(invalidateData());
@@ -146,7 +138,7 @@ function Recents() {
 
     const handleSaveIncome = async () => {
         try {
-            await updateIncome(incomeEditingId, incomeEditData);
+            await financeService.updateIncome(incomeEditingId, incomeEditData);
             toast.success("Income updated!");
             await fetchIncomes();
             dispatch(invalidateData());
@@ -164,7 +156,7 @@ function Recents() {
     const confirmDeleteIncome = async () => {
         if (!incomeToDelete) return;
         try {
-            await deleteIncome(incomeToDelete);
+            await financeService.deleteIncome(incomeToDelete);
             toast.success("Income deleted");
             await fetchIncomes();
             dispatch(invalidateData());

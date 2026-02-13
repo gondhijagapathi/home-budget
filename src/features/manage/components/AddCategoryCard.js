@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { getCategories, postData } from '../api/apiCaller';
-import { addCategories, invalidateData } from '../store/mainDataSlice';
+import { financeService } from '../../../services/financeService';
+import { setCategories, invalidateData } from '../../../store/financeSlice';
 
 function AddCategoryCard() {
     const dispatch = useDispatch();
@@ -18,10 +18,10 @@ function AddCategoryCard() {
             return;
         }
         try {
-            await postData('categories', { categoryName: newCategory });
+            await financeService.addCategory(newCategory);
             toast.success("Category added successfully!");
-            const response = await getCategories(1, 1000);
-            dispatch(addCategories(response.data || []));
+            const response = await financeService.getCategories(1, 1000);
+            dispatch(setCategories(response.data || []));
             dispatch(invalidateData());
             setNewCategory("");
         } catch (error) {

@@ -1,44 +1,52 @@
+import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
-import SideNav from "./main/SideNav";
-import DashBoard from "./main/DashBoard";
-import EditDatabase from "./main/EditDatabase"; // Will become the manage page
-import ReportsPage from "./main/ReportsPage";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Home, Package2, PanelLeft, Settings, Moon, Sun, LineChart } from "lucide-react";
-import AddItemDialog from "./main/AddItemDialog";
-import UploadReceipts from "./main/UploadReceipts";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useDispatch, useSelector } from 'react-redux';
+
+// Components
+import SideNav from "./components/SideNav";
+import AddItemDialog from "./components/AddItemDialog";
 import { useTheme } from "./components/theme-provider";
-import { getCategories, getUsers, getSubCategories, getIncomeSources } from './main/api/apiCaller'; // Import API calls
-import { addCategories, addUsers, addAllSubCategories, addIncomeSources } from './main/store/mainDataSlice'; // Import Redux actions
-import { useDispatch, useSelector } from 'react-redux'; // Import useDispatch and useSelector
+
+// Pages
+import DashboardPage from "./pages/DashboardPage";
+import ManagePage from "./pages/ManagePage";
+import ReportsPage from "./pages/ReportsPage";
+import UploadReceiptsPage from "./pages/UploadReceiptsPage";
+
+// Services & Store
+import { financeService } from './services/financeService';
+import { userService } from './services/userService';
+import { setCategories, setAllSubCategories, setIncomeSources, setUsers, invalidateData } from './store/financeSlice'; // Actually users is in userSlice
+import { setUsers as setUsersAction } from './store/userSlice';
 
 const App = () => {
     const { setTheme } = useTheme();
     const dispatch = useDispatch();
-    const lastUpdated = useSelector(state => state.mainData.lastUpdated); // Listen to updates
+    const lastUpdated = useSelector(state => state.finance.lastUpdated); // Listen to updates from finance slice
     const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
-    React.useEffect(() => {
+    useEffect(() => {
         const fetchData = async () => {
             try {
                 // Fetch with high limit to populate "all" options for dropdowns
                 // Re-fetched whenever lastUpdated changes to ensure consistent state
                 const [categoriesRes, allSubCategoriesRes, usersRes, incomeSourcesRes] = await Promise.all([
-                    getCategories(1, 1000),
-                    getSubCategories(0, 1, 1000),
-                    getUsers(1, 1000),
-                    getIncomeSources(1, 1000)
+                    financeService.getCategories(1, 1000),
+                    financeService.getSubCategories(0, 1, 1000), // Check signature: getSubCategories(id, page, limit). ID 0 for all? Need to check service.
+                    userService.getUsers(1, 1000),
+                    financeService.getIncomeSources(1, 1000)
                 ]);
 
                 // Backend now returns { data: [...], ... } for paginated calls.
-                // We extract .data for the Redux store which expects arrays.
-                dispatch(addCategories(categoriesRes.data || []));
-                dispatch(addAllSubCategories(allSubCategoriesRes.data || []));
-                dispatch(addUsers(usersRes.data || []));
-                dispatch(addIncomeSources(incomeSourcesRes.data || []));
+                dispatch(setCategories(categoriesRes.data || []));
+                dispatch(setAllSubCategories(allSubCategoriesRes.data || []));
+                dispatch(setUsersAction(usersRes.data || []));
+                dispatch(setIncomeSources(incomeSourcesRes.data || []));
             } catch (error) {
                 console.error("Failed to fetch initial data in App.js", error);
             }
@@ -127,10 +135,10 @@ const App = () => {
                     </header>
                     <main className="flex-1 p-4 sm:p-6">
                         <Routes>
-                            <Route path="/" element={<DashBoard />} />
+                            <Route path="/" element={<DashboardPage />} />
                             <Route path="/reports" element={<ReportsPage />} />
-                            <Route path="/manage" element={<EditDatabase />} />
-                            <Route path="/upload-receipts" element={<UploadReceipts />} />
+                            <Route path="/manage" element={<ManagePage />} />
+                            <Route path="/upload-receipts" element={<UploadReceiptsPage />} />
                         </Routes>
                     </main>
                 </div>
@@ -141,4 +149,5 @@ const App = () => {
 };
 
 export default App;
+
 

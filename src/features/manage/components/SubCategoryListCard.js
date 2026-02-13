@@ -21,15 +21,15 @@ import {
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getSubCategories, deleteSubCategory, updateSubCategory } from '../api/apiCaller';
-import { addAllSubCategories, invalidateData } from '../store/mainDataSlice';
-import DeleteConfirmationDialog from './DeleteConfirmationDialog';
-import PaginationControls from './PaginationControls';
+import { financeService } from '../../../services/financeService';
+import { setAllSubCategories, invalidateData } from '../../../store/financeSlice';
+import DeleteConfirmationDialog from '../../../components/DeleteConfirmationDialog';
+import PaginationControls from '../../../components/PaginationControls';
 
 function SubCategoryListCard() {
     const dispatch = useDispatch();
-    const lastUpdated = useSelector(state => state.mainData.lastUpdated);
-    const categories = useSelector(state => state.mainData.categories);
+    const lastUpdated = useSelector(state => state.finance.lastUpdated);
+    const categories = useSelector(state => state.finance.categories);
 
     // Local state for Filtering & Pagination
     const [subCategories, setSubCategories] = React.useState([]);
@@ -50,7 +50,7 @@ function SubCategoryListCard() {
         try {
             // "0" usually means all in our backend logic (based on initial analysis of existing code, though controller checked !== "0")
             // Let's verify: In SubCategoryController: if (id && id !== "0")... so "0" works for getting all.
-            const response = await getSubCategories(filterCategoryId, currentPage, 15);
+            const response = await financeService.getSubCategories(filterCategoryId, currentPage, 15);
             setSubCategories(response.data || []);
             setTotalPages(response.totalPages || 1);
         } catch (error) {
@@ -96,15 +96,15 @@ function SubCategoryListCard() {
             return;
         }
         try {
-            await updateSubCategory(editingSubCategoryId, editingSubCategoryName, editingSubCategoryParentId);
+            await financeService.updateSubCategory(editingSubCategoryId, editingSubCategoryName, editingSubCategoryParentId);
             toast.success("Subcategory updated successfully!");
 
             // 1. Refresh local
             await fetchSubCategories();
 
             // 2. Refresh global
-            const allSub = await getSubCategories(0, 1, 1000);
-            dispatch(addAllSubCategories(allSub.data || []));
+            const allSub = await financeService.getSubCategories(0, 1, 1000);
+            dispatch(setAllSubCategories(allSub.data || []));
             dispatch(invalidateData());
 
             handleCancelEditSubCategory();
@@ -116,15 +116,15 @@ function SubCategoryListCard() {
     const confirmDeleteSubCategory = async () => {
         if (!subCategoryToDelete) return;
         try {
-            await deleteSubCategory(subCategoryToDelete);
+            await financeService.deleteSubCategory(subCategoryToDelete);
             toast.success("Subcategory deleted successfully!");
 
             // 1. Refresh local
             await fetchSubCategories();
 
             // 2. Refresh global
-            const allSub = await getSubCategories(0, 1, 1000);
-            dispatch(addAllSubCategories(allSub.data || []));
+            const allSub = await financeService.getSubCategories(0, 1, 1000);
+            dispatch(setAllSubCategories(allSub.data || []));
             dispatch(invalidateData());
         } catch (error) {
             toast.error(error.message);

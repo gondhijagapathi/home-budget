@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import { Provider } from 'react-redux'
-import store from './main/store/store';
+import { store } from './store';
 import { ThemeProvider } from './components/theme-provider';
 import ErrorBoundary from './components/ErrorBoundary';
 

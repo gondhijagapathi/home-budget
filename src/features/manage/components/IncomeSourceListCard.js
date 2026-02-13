@@ -20,14 +20,14 @@ import {
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getIncomeSources, deleteIncomeSource, updateIncomeSource } from '../api/apiCaller';
-import { addIncomeSources, invalidateData } from '../store/mainDataSlice';
-import DeleteConfirmationDialog from './DeleteConfirmationDialog';
-import PaginationControls from './PaginationControls';
+import { financeService } from '../../../services/financeService';
+import { setIncomeSources, invalidateData } from '../../../store/financeSlice';
+import DeleteConfirmationDialog from '../../../components/DeleteConfirmationDialog';
+import PaginationControls from '../../../components/PaginationControls';
 
 function IncomeSourceListCard() {
     const dispatch = useDispatch();
-    const lastUpdated = useSelector(state => state.mainData.lastUpdated);
+    const lastUpdated = useSelector(state => state.finance.lastUpdated);
 
     // Local State
     const [sources, setSources] = React.useState([]);
@@ -44,7 +44,7 @@ function IncomeSourceListCard() {
 
     const fetchSources = React.useCallback(async () => {
         try {
-            const res = await getIncomeSources(currentPage, 15);
+            const res = await financeService.getIncomeSources(currentPage, 15);
             setSources(res.data || []);
             setTotalPages(res.totalPages || 1);
         } catch (error) {
@@ -78,15 +78,15 @@ function IncomeSourceListCard() {
             return;
         }
         try {
-            await updateIncomeSource(editingId, editingName);
+            await financeService.updateIncomeSource(editingId, editingName);
             toast.success("Updated!");
 
             // 1. Refresh Local
             await fetchSources();
 
             // 2. Refresh Global
-            const all = await getIncomeSources(1, 1000);
-            dispatch(addIncomeSources(all.data || []));
+            const all = await financeService.getIncomeSources(1, 1000);
+            dispatch(setIncomeSources(all.data || []));
             dispatch(invalidateData());
 
             handleCancelEdit();
@@ -103,15 +103,15 @@ function IncomeSourceListCard() {
     const confirmDelete = async () => {
         if (!idToDelete) return;
         try {
-            await deleteIncomeSource(idToDelete);
+            await financeService.deleteIncomeSource(idToDelete);
             toast.success("Deleted!");
 
             // 1. Refresh Local
             await fetchSources();
 
             // 2. Refresh Global
-            const all = await getIncomeSources(1, 1000);
-            dispatch(addIncomeSources(all.data || []));
+            const all = await financeService.getIncomeSources(1, 1000);
+            dispatch(setIncomeSources(all.data || []));
             dispatch(invalidateData());
 
         } catch (err) {

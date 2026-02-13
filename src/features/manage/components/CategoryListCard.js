@@ -20,14 +20,14 @@ import {
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getCategories, deleteCategory, updateCategory, getSubCategories } from '../api/apiCaller';
-import { addCategories, addAllSubCategories, invalidateData } from '../store/mainDataSlice';
-import DeleteConfirmationDialog from './DeleteConfirmationDialog';
-import PaginationControls from './PaginationControls';
+import { financeService } from '../../../services/financeService';
+import { setCategories, setAllSubCategories, invalidateData } from '../../../store/financeSlice';
+import DeleteConfirmationDialog from '../../../components/DeleteConfirmationDialog';
+import PaginationControls from '../../../components/PaginationControls';
 
 function CategoryListCard() {
     const dispatch = useDispatch();
-    const lastUpdated = useSelector(state => state.mainData.lastUpdated);
+    const lastUpdated = useSelector(state => state.finance.lastUpdated);
 
     // Local state for paginated table
     const [categories, setCategories] = React.useState([]);
@@ -44,7 +44,7 @@ function CategoryListCard() {
 
     const fetchCategories = React.useCallback(async () => {
         try {
-            const response = await getCategories(currentPage, 15);
+            const response = await financeService.getCategories(currentPage, 15);
             setCategories(response.data || []);
             setTotalPages(response.totalPages || 1);
         } catch (error) {
@@ -78,15 +78,15 @@ function CategoryListCard() {
             return;
         }
         try {
-            await updateCategory(editingCategoryId, editingCategoryName);
+            await financeService.updateCategory(editingCategoryId, editingCategoryName);
             toast.success("Category updated successfully!");
 
             // 1. Refresh local table
             await fetchCategories();
 
             // 2. Refresh global store (for dropdowns)
-            const allCategories = await getCategories(1, 1000);
-            dispatch(addCategories(allCategories.data || []));
+            const allCategories = await financeService.getCategories(1, 1000);
+            dispatch(setCategories(allCategories.data || []));
             dispatch(invalidateData());
 
             handleCancelEditCategory(); // Reset editing state
@@ -98,18 +98,18 @@ function CategoryListCard() {
     const confirmDeleteCategory = async () => {
         if (!categoryToDelete) return;
         try {
-            await deleteCategory(categoryToDelete);
+            await financeService.deleteCategory(categoryToDelete);
             toast.success("Category deleted successfully!");
 
             // 1. Refresh local table
             await fetchCategories();
 
             // 2. Refresh global store
-            const allCategories = await getCategories(1, 1000);
-            dispatch(addCategories(allCategories.data || []));
+            const allCategories = await financeService.getCategories(1, 1000);
+            dispatch(setCategories(allCategories.data || []));
 
-            const allSubCategories = await getSubCategories(0, 1, 1000);
-            dispatch(addAllSubCategories(allSubCategories.data || []));
+            const allSubCategories = await financeService.getSubCategories(0, 1, 1000);
+            dispatch(setAllSubCategories(allSubCategories.data || []));
 
             dispatch(invalidateData());
         } catch (error) {
