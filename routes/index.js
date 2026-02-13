@@ -77,6 +77,13 @@ router.route('/restore')
 // Upload Route
 router.post('/upload-receipt', upload.single('file'), uploadController.uploadReceipt);
 
-router.get('/usage', usageController.getUsageStats);
+router.route('/ai-insights/latest')
+  .delete(require('../controllers/AiInsightsController').deleteLatestAssessment);
+
+router.route('/ai-insights/:id')
+  .delete(require('../controllers/AiInsightsController').deleteAssessmentById);
+
+router.route('/usage')
+  .get(require('../controllers/UsageController').getUsageStats);
 
 module.exports = router;

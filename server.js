@@ -43,10 +43,27 @@ app.use(/^(?!(\/api)).*$/, (req, res) => {
 });
 
 
+// Discord Bot & Scheduler
+const { client } = require('./services/discordBot/bot');
+const { initScheduler } = require('./services/discordBot/scheduler');
+
 // Start server after DB Init
 schemaInit().then(() => {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+
+    // Initialize Discord Bot
+    if (process.env.DISCORD_BOT_TOKEN) {
+      client.login(process.env.DISCORD_BOT_TOKEN).then(() => {
+        console.log('[Discord] Bot logged in successfully.');
+        // Initialize Scheduler
+        initScheduler();
+      }).catch(err => {
+        console.error('[Discord] Failed to login:', err);
+      });
+    } else {
+      console.warn('[Discord] No DISCORD_BOT_TOKEN found. Bot will not run.');
+    }
   });
 }).catch(err => {
   console.error('Failed to initialize database schema. Exiting...', err);

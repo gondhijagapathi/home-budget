@@ -7,6 +7,7 @@ import AddIncomeSourceCard from '../features/manage/components/AddIncomeSourceCa
 import IncomeSourceListCard from '../features/manage/components/IncomeSourceListCard';
 import BackupRestoreCard from '../features/manage/components/BackupRestoreCard';
 import GeminiUsageStats from '../features/manage/components/GeminiUsageStats';
+import AiAdvisorManageCard from '../features/manage/components/AiAdvisorManageCard';
 
 
 function EditDatabase() {
@@ -21,6 +22,7 @@ function EditDatabase() {
 
                 {/* Add Income Source */}
                 <AddIncomeSourceCard />
+
 
                 {/* View & Edit Categories */}
                 <CategoryListCard />
@@ -42,7 +44,10 @@ function EditDatabase() {
                 <GeminiUsageStats />
             </div>
 
-
+            {/* AI Advisor Management */}
+            <div className="w-full">
+                <AiAdvisorManageCard />
+            </div>
 
         </div >
     );

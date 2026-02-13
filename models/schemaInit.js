@@ -72,16 +72,13 @@ const definedTables = [
     { name: 'incomeSource', query: createIncomeSourceTable },
     { name: 'income', query: createIncomeTable },
     {
-        name: 'ai_insights', query: `
-        CREATE TABLE IF NOT EXISTS ai_insights (
-            insightId VARCHAR(200) NOT NULL,
-            userId VARCHAR(200),
-            dateOfInsight DATE NOT NULL,
-            content TEXT,
-            createdAt DATETIME,
-            PRIMARY KEY (insightId),
-            KEY (userId),
-            KEY (dateOfInsight)
+        name: 'report_logs', query: `
+        CREATE TABLE IF NOT EXISTS report_logs (
+            logId VARCHAR(200) NOT NULL,
+            reportType VARCHAR(50) DEFAULT 'WEEKLY_ASSESSMENT',
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (logId),
+            KEY (timestamp)
         )`
     },
     {
@@ -132,9 +129,9 @@ const triggersExact = [
         create: `CREATE TRIGGER income_trigger BEFORE INSERT ON income FOR EACH ROW BEGIN IF NEW.incomeId IS NULL OR NEW.incomeId = '' THEN SET NEW.incomeId = UUID(); END IF; END`
     },
     {
-        name: 'ai_insights_trigger',
-        drop: 'DROP TRIGGER IF EXISTS ai_insights_trigger',
-        create: `CREATE TRIGGER ai_insights_trigger BEFORE INSERT ON ai_insights FOR EACH ROW BEGIN IF NEW.insightId IS NULL OR NEW.insightId = '' THEN SET NEW.insightId = UUID(); END IF; END`
+        name: 'report_logs_trigger',
+        drop: 'DROP TRIGGER IF EXISTS report_logs_trigger',
+        create: `CREATE TRIGGER report_logs_trigger BEFORE INSERT ON report_logs FOR EACH ROW BEGIN IF NEW.logId IS NULL OR NEW.logId = '' THEN SET NEW.logId = UUID(); END IF; END`
     },
     {
         name: 'gemini_usage_trigger',
@@ -170,9 +167,19 @@ async function initSchema() {
         // --- TRIGGERS ---
         // Always Drop and Recreate triggers to ensure latest logic
         for (const trigger of triggersExact) {
-            await db(trigger.drop);
-            await db(trigger.create);
-            console.log(`[Schema-Init] Updated trigger: ${trigger.name}`);
+            try {
+                await db(trigger.drop);
+                await db(trigger.create);
+                console.log(`[Schema-Init] Updated trigger: ${trigger.name}`);
+            } catch (error) {
+                // MySQL error 1359: Trigger already exists
+                if (error.errno === 1359 || error.code === 'ER_TRG_ALREADY_EXISTS') {
+                    console.warn(`[Schema-Init] Trigger ${trigger.name} already exists (ignoring).`);
+                } else {
+                    console.error(`[Schema-Init] Error updating trigger ${trigger.name}:`, error);
+                    throw error;
+                }
+            }
         }
 
         console.log('[Schema-Init] Schema initialization complete.');

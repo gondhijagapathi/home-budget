@@ -92,4 +92,3 @@ const db = async function (...args) {
 db.pool = pool;
 
 module.exports = db;
-
