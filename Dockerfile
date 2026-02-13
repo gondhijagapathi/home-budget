@@ -34,6 +34,7 @@ COPY server.js ./
 COPY models/ ./models/
 COPY controllers/ ./controllers/
 COPY routes/ ./routes/
+COPY services/ ./services/
 
 # 3. Built frontend from stage 1 (webpack outputs to build/)
 COPY --from=frontend-build /app/build ./build
