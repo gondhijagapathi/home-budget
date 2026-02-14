@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, Events } = require('discord.js');
+const { Client, GatewayIntentBits, Events, REST, Routes } = require('discord.js');
 
 const client = new Client({
     intents: [
@@ -8,13 +8,15 @@ const client = new Client({
     ]
 });
 
-client.once(Events.ClientReady, () => {
+const { handleCommand, handleInteraction, registerSlashCommands } = require('./commandHandler');
+
+client.once(Events.ClientReady, async () => {
     console.log(`[Discord] Bot logged in as ${client.user.tag}`);
+    await registerSlashCommands(client);
 });
 
-const { handleCommand } = require('./commandHandler');
-
 client.on('messageCreate', handleCommand);
+client.on('interactionCreate', handleInteraction);
 
 async function sendMessage(message) {
     const channelId = process.env.DISCORD_CHANNEL_ID;

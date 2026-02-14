@@ -114,15 +114,28 @@ async function generateFinancialReport(startDate, endDate) {
             contextText = "\nUser Context & Goals:\n" + contextRows.map(row => `- ${row.contextKey}: ${row.content}`).join('\n');
         }
 
+        // Fetch Budgets (Active for this month or Default)
+        // We want to know the budget applicable for the *current cycle*.
+        // Ideally, we check for a specific month entry, else default.
+        const budgetRows = await db('SELECT c.categoryName, b.amount, b.month FROM budget b JOIN category c ON b.categoryId = c.categoryId');
+
+        // Process budgets to get a clean map or list
+        // For simplicity, let's just pass the raw list and let AI figure it out, OR simplify.
+        // Let's simplify: Map Category -> Amount. If duplicate (month vs default), pick logic?
+        // AI is smart enough to parse "Default Budget" vs "Month Budget".
+        // Let's just pass the rows.
+
         const prompt = `
             You are a stern but helpful Personal Financial Advisor. 
             Analyze the following financial data for the user. 
-            Compare the current cycle's spending/income with the previous cycle.
-            Identify trends, overspending, and potential investment opportunities.
-            Pay special attention to categories like "Investments" or "Stocks".
+            
+            **Objective**:
+            1. Compare the current cycle's spending against the **User's Budget** (provided below). Highlight any overspending.
+            2. Compare current spending/income with the previous cycle.
+            3. Identify trends and provide actionable advice based on the **User Context & Goals**.
             
             Data:
-            ${JSON.stringify({ spendingData, incomeData }, null, 2)}
+            ${JSON.stringify({ spendingData, incomeData, budgetData: budgetRows }, null, 2)}
             
             ${contextText}
 

@@ -1,4 +1,7 @@
 const db = require('../models/dbConnection');
+const uuid = require('react-uuid');
+const { checkBudget } = require('../services/discordBot/utils/budgetAlert');
+const { sendMessage } = require('../services/discordBot/bot');
 
 const SpendingController = {
     getAllSpendings: async function (req, res) {
@@ -65,55 +68,41 @@ const SpendingController = {
     },
 
     postSpendings: async function (req, res) {
+        const { categoryId, subCategoryId, userId, amount, dateOfSpending } = req.body;
+
+        if (!categoryId || !amount) {
+            return res.status(400).json({ message: 'Category and Amount are required' });
+        }
+
+        // Assuming uuid() is imported or defined elsewhere for generating unique IDs
+        // Assuming checkBudget and sendMessage are imported or defined elsewhere
+        const newSpending = {
+            spendingId: uuid(),
+            categoryId,
+            subCategoryId: subCategoryId || null,
+            userId: userId || 'default_user',
+            amount: parseFloat(amount),
+            dateOfSpending: dateOfSpending ? new Date(dateOfSpending) : new Date()
+        };
+
         try {
-            // Client sends { data: [spendingId, subCategoryId, userId, amount, dateOfSpending, categoryId] }
-            const params = Array.isArray(req.body.data)
-                ? req.body.data
-                : [req.body.spendingId, req.body.subCategoryId, req.body.userId, req.body.amount, req.body.dateOfSpending, req.body.categoryId];
+            await db('INSERT INTO spendings SET ?', newSpending);
+            res.status(201).json(newSpending);
 
-            // Validation
-            if (!Array.isArray(params) || params.length !== 6) {
-                return res.status(400).json({ error: 'Invalid data format. Expected array with 6 elements: [spendingId, subCategoryId, userId, amount, dateOfSpending, categoryId]' });
-            }
+            // --- Discord Budget Check ---
+            checkBudget(newSpending.categoryId, newSpending.amount, newSpending.dateOfSpending)
+                .then(alertMsg => {
+                    if (alertMsg) {
+                        console.log('[BudgetAlert] Sending alert:', alertMsg);
+                        sendMessage(alertMsg);
+                    }
+                })
+                .catch(err => console.error('[BudgetAlert] Failed:', err));
+            // ----------------------------
 
-            const [spendingId, subCategoryId, userId, amount, dateOfSpending, categoryId] = params;
-
-            if (!spendingId || typeof spendingId !== 'string') {
-                return res.status(400).json({ error: 'Spending ID is required' });
-            }
-            if (!subCategoryId || typeof subCategoryId !== 'string') {
-                return res.status(400).json({ error: 'Subcategory ID is required' });
-            }
-            if (!userId || typeof userId !== 'string') {
-                return res.status(400).json({ error: 'User ID is required' });
-            }
-            if (typeof amount !== 'number' || isNaN(amount) || amount <= 0) {
-                return res.status(400).json({ error: 'Amount must be a positive number' });
-            }
-            if (!dateOfSpending || typeof dateOfSpending !== 'string') {
-                return res.status(400).json({ error: 'Date of spending is required' });
-            }
-            if (!categoryId || typeof categoryId !== 'string') {
-                return res.status(400).json({ error: 'Category ID is required' });
-            }
-
-            // Validate date format (YYYY-MM-DD HH:mm:ss)
-            const dateRegex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
-            if (!dateRegex.test(dateOfSpending)) {
-                return res.status(400).json({ error: 'Invalid date format. Expected YYYY-MM-DD HH:mm:ss' });
-            }
-
-            const results = await db(`INSERT INTO spendings (spendingId, subCategoryId, userId, amount, dateOfSpending, categoryId) VALUES (?, ?, ?, ?, ?, ?)`, params);
-            res.status(201).json(results);
         } catch (error) {
             console.error(error);
-            if (error.code === 'ER_DUP_ENTRY') {
-                return res.status(409).json({ error: 'Spending entry already exists' });
-            }
-            if (error.code === 'ER_NO_REFERENCED_ROW_2') {
-                return res.status(400).json({ error: 'Invalid foreign key reference (subcategory, user, or category not found)' });
-            }
-            res.status(500).json({ error: 'Internal Server Error' });
+            res.status(500).json({ error: 'Failed to save spending' });
         }
     },
 
