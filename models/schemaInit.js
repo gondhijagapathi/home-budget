@@ -94,6 +94,36 @@ const definedTables = [
             PRIMARY KEY (usageId),
             KEY (timestamp)
         )`
+    },
+    {
+        name: 'cycle_reports', query: `
+        CREATE TABLE IF NOT EXISTS cycle_reports (
+            reportId INT AUTO_INCREMENT PRIMARY KEY,
+            cycleStartDate DATE NOT NULL,
+            cycleEndDate DATE NOT NULL,
+            generatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+            status VARCHAR(50) DEFAULT 'SUCCESS',
+            UNIQUE KEY unique_cycle (cycleStartDate, cycleEndDate)
+        )`
+    },
+    {
+        name: 'budget', query: `
+        CREATE TABLE IF NOT EXISTS budget (
+            budgetId INT PRIMARY KEY AUTO_INCREMENT,
+            categoryId VARCHAR(200),
+            amount DECIMAL(10, 2),
+            month VARCHAR(7) NULL, -- 'YYYY-MM' or NULL for default
+            FOREIGN KEY (categoryId) REFERENCES category(categoryId)
+        )`
+    },
+    {
+        name: 'advisor_context', query: `
+        CREATE TABLE IF NOT EXISTS advisor_context (
+            contextId INT PRIMARY KEY AUTO_INCREMENT,
+            contextKey VARCHAR(50) NOT NULL UNIQUE,
+            content TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`
     }
 ];
 

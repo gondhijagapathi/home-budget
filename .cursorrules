@@ -1,0 +1,125 @@
+# AI Development Instructions
+
+This document provides guidelines for integrating Artificial Intelligence features into the project.
+
+## Google Gemini API
+
+We use the Google Gemini API for generative AI capabilities.
+
+### Library to Use
+
+**ALWAYS** use the newer `@google/genai` library.
+
+**NEVER** use the deprecated `@google/generative-ai` library.
+
+### Implementation Guidelines
+
+1.  **Client Initialization**:
+    Initialize the client using the `GoogleGenAI` class from `@google/genai`.
+    ```javascript
+    const { GoogleGenAI } = require("@google/genai");
+    const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    ```
+
+2.  **Model Selection**:
+    Use current models like `gemini-2.0-flash` or `gemini-1.5-pro` as appropriate for the task. Check strictly for model availability and deprecations.
+
+3.  **Generating Content**:
+    Use the `models.generateContent` method.
+    ```javascript
+    const response = await genAI.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: [
+            {
+                parts: [
+                    { text: "Your prompt here" }
+                ]
+            }
+        ]
+    });
+    ```
+
+4.  **Handling Responses**:
+    The response object structure in `@google/genai` might differ slightly from the older library. Ensure you access the text content correctly.
+    ```javascript
+    // Example access (verify with specific SDK version documentation if needed)
+    const text = response.text(); 
+    // OR
+    const text = response.candidates[0].content.parts[0].text;
+    ```
+
+### Best Practices
+
+-   **Environment Variables**: Always store API keys in `.env` files. Never hardcode them.
+-   **Error Handling**: Wrap API calls in `try...catch` blocks to handle network issues or API errors gracefully.
+-   **Usage Logging**: Log token usage if possible to track costs and performance.
+
+## Database & Schema Management
+
+1.  **Schema Initialization**:
+    -   **ALL** tables must be defined in `models/schemaInit.js`.
+    -   This ensures tables are created automatically on application startup/deployment.
+    -   **DO NOT** rely on one-off scripts (e.g., in `scripts/`) for creating tables in production.
+
+2.  **Backup Integration**:
+    -   **CRITICAL**: Every time a new table is created, it **MUST** be added to the `tables` array in `controllers/BackupController.js`.
+    -   Update both `getBackup` and `restoreBackup` functions to include the new table name.
+    -   Failure to do this puts user data at risk.
+
+3.  **Cleanup**:
+    -   Delete any temporary scripts (e.g., `scripts/create_table_x.js`, `scripts/check_tables.js`) after the feature is implemented and verified.
+    -   Keep the `scripts/` directory clean.
+
+## Project Context & Domain Logic
+
+1.  **Financial Cycle**:
+    -   The financial month runs from the **26th** of the current month to the **25th** of the next month.
+    -   Example: "December Cycle" = Dec 26 to Jan 25.
+    -   All reporting logic must adhere to this date range logic.
+
+2.  **Currency**:
+    -   **ALWAYS** use Indian Rupees (**₹**) for all financial values in reports and UI.
+
+3.  **Module System**:
+    -   Use **CommonJS** (`require`/`module.exports`).
+    -   Do **NOT** use ES Modules (`import`/`export`) unless explicitly migrating.
+
+## Architecture & File Structure
+
+### 1. Backend (Node.js/Express)
+-   **Entry Point**: `server.js`
+    -   Initializes Express app, DB connection, API routes, and Discord bot.
+    -   Serves React static files from `build/`.
+-   **API Routes**: `routes/index.js`
+    -   Maps endpoints (e.g., `/api/users`) to Controllers.
+-   **Controllers**: `controllers/`
+    -   Handles business logic (`UserController`, `SpendingController`, etc.).
+    -   `BackupController.js`: Critical for data safety (Import/Export).
+-   **Database Models**: `models/`
+    -   `dbConnection.js`: MySQL connection pool.
+    -   `schemaInit.js`: **Single Source of Truth** for database schema. Defines all tables and triggers.
+
+### 2. Discord Bot Service
+-   **Location**: `services/discordBot/`
+    -   `bot.js`: Discord Client initialization and message listening.
+    -   `scheduler.js`: Cron jobs (Runs daily at 9 AM to check for monthly cycle completion).
+    -   `financialAdvisor.js`: AI Logic using Google Gemini for generating reports.
+    -   `commands/`: Individual command modules (e.g., `financial.js`, `monitoring.js`).
+
+### 3. Frontend (React)
+-   **Location**: `src/`
+    -   `App.js`: Main component and routing.
+    -   `components/`: Reusable UI components.
+    -   `features/`: Feature-specific logic.
+    -   `pages/`: Full page views.
+    -   `services/`: Frontend API calls.
+    -   `store/`: State management (Redux/Context).
+
+### 4. Key Workflows
+-   **Financial Cycle**: 26th (Current Month) -> 25th (Next Month).
+-   **AI Reporting**:
+    -   Triggered by `scheduler.js` or `!report` command.
+    -   Fetches data -> Generates prompt -> Calls Gemini -> Sends to Discord -> Logs to `cycle_reports`.
+-   **Backups**:
+    -   `BackupController` exports **ALL** tables to JSON.
+    -   Must be updated whenever a new table is added.

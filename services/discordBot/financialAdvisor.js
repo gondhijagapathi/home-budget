@@ -4,30 +4,56 @@ const logGeminiUsage = require('../../models/usageLogger');
 
 const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-async function getMonthlyFinancialData() {
-    const now = new Date();
-    // ... (rest of function is same, but let's just target the whole file or the import/init lines + generateContent part for cleaner replacement if possible, but I'll try to be surgical)
-    // Actually, I'll just replace the import and the generateFinancialReport function.
-    // Wait, the tool requires me to be precise. 
-    // I will replace the top lines and the generateFinancialReport function logic.
-    // To do this in one go with replace_file_content is hard if they are far apart.
-    // I'll do it in chunks or just rewrite the whole file since it's small (80 lines).
-    // Actually, replace_file_content is better for stability.
+// Check if we have data for the end of the cycle (25th) or later
+async function checkDataAvailability(startDate, endDate) {
+    const endDateStr = endDate.toISOString().slice(0, 10);
 
-    // I'll use multi_replace_file_content if available? checks tool list...
-    // Yes, 'multi_replace_file_content' is available. 
-    // I'll use that.
+    // Check Spending OR Income for any record >= endDate
+    const query = `
+        SELECT 1 FROM spendings WHERE dateOfSpending >= ? LIMIT 1
+    `;
+    const query2 = `
+        SELECT 1 FROM income WHERE dateOfIncome >= ? LIMIT 1
+    `;
 
-    // But wait, I'm just writing this Thought block. The tool call is next.
+    const [spendingRows, incomeRows] = await Promise.all([
+        db(query, [endDateStr]),
+        db(query2, [endDateStr])
+    ]);
+
+    return (spendingRows.length > 0 || incomeRows.length > 0);
 }
 
-async function getMonthlyFinancialData() {
-    const now = new Date();
-    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 19).replace('T', ' ');
-    const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString().slice(0, 19).replace('T', ' ');
+async function getMonthlyFinancialData(currentStart, currentEnd) {
+    // If no dates provided, fallback to default logic (useful for manual testing without args)
+    // But mostly we expect args now.
 
-    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().slice(0, 19).replace('T', ' ');
-    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59).toISOString().slice(0, 19).replace('T', ' ');
+    let lastStart, lastEnd;
+
+    if (!currentStart || !currentEnd) {
+        const now = new Date();
+        const cutoffDay = 26;
+        if (now.getDate() >= cutoffDay) {
+            currentStart = new Date(now.getFullYear(), now.getMonth(), cutoffDay);
+            currentEnd = new Date(now.getFullYear(), now.getMonth() + 1, cutoffDay - 1, 23, 59, 59);
+        } else {
+            currentStart = new Date(now.getFullYear(), now.getMonth() - 1, cutoffDay);
+            currentEnd = new Date(now.getFullYear(), now.getMonth(), cutoffDay - 1, 23, 59, 59);
+        }
+    }
+
+    // Calculate previous cycle for comparison
+    // Previous cycle starts 1 month before currentStart
+    lastStart = new Date(currentStart);
+    lastStart.setMonth(lastStart.getMonth() - 1);
+
+    lastEnd = new Date(currentEnd);
+    lastEnd.setMonth(lastEnd.getMonth() - 1);
+
+    const currentStartStr = currentStart.toISOString().slice(0, 19).replace('T', ' ');
+    const currentEndStr = currentEnd.toISOString().slice(0, 19).replace('T', ' ');
+    const lastStartStr = lastStart.toISOString().slice(0, 19).replace('T', ' ');
+    const lastEndStr = lastEnd.toISOString().slice(0, 19).replace('T', ' ');
 
     // Fetch Spending
     const spendingQuery = `
@@ -56,28 +82,47 @@ async function getMonthlyFinancialData() {
     `;
 
     const [spendingData, incomeData] = await Promise.all([
-        db(spendingQuery, [lastMonthStart, lastMonthEnd, currentMonthStart, currentMonthEnd]),
-        db(incomeQuery, [lastMonthStart, lastMonthEnd, currentMonthStart, currentMonthEnd])
+        db(spendingQuery, [lastStartStr, lastEndStr, currentStartStr, currentEndStr]),
+        db(incomeQuery, [lastStartStr, lastEndStr, currentStartStr, currentEndStr])
     ]);
 
-    return { spendingData, incomeData, currentMonth: now.getMonth() + 1, lastMonth: now.getMonth() };
+    return {
+        spendingData,
+        incomeData,
+        currentMonthLabel: `${currentStart.toDateString()} - ${currentEnd.toDateString()}`,
+        lastMonthLabel: `${lastStart.toDateString()} - ${lastEnd.toDateString()}`
+    };
 }
 
-async function generateFinancialReport() {
+async function generateFinancialReport(startDate, endDate) {
     try {
-        const { spendingData, incomeData } = await getMonthlyFinancialData();
+        const { spendingData, incomeData, currentMonthLabel, lastMonthLabel } = await getMonthlyFinancialData(startDate, endDate);
+
+        // Fetch Context
+        const contextRows = await db('SELECT contextKey, content FROM advisor_context');
+        let contextText = "";
+        if (contextRows.length > 0) {
+            contextText = "\nUser Context & Goals:\n" + contextRows.map(row => `- ${row.contextKey}: ${row.content}`).join('\n');
+        }
 
         const prompt = `
             You are a stern but helpful Personal Financial Advisor. 
             Analyze the following financial data for the user. 
-            Compare the current month's spending/income with the previous month.
+            Compare the current cycle's spending/income with the previous cycle.
             Identify trends, overspending, and potential investment opportunities.
             Pay special attention to categories like "Investments" or "Stocks".
             
             Data:
             ${JSON.stringify({ spendingData, incomeData }, null, 2)}
             
-            Provide a weekly assessment report. Keep it concise, actionable, and easy to read on Discord.
+            ${contextText}
+
+            Provide a comprehensive financial assessment report. Keep it concise, actionable, and easy to read on Discord.
+            Note: The user's spending cycle starts on the 26th and ends on the 25th of the next month.
+            The report covers the cycle: ${currentMonthLabel}.
+            The previous comparison cycle was: ${lastMonthLabel}.
+            
+            All currency values should be in Indian Rupees (₹).
             Use emojis and bold text for emphasis.
         `;
 
@@ -110,7 +155,7 @@ async function generateFinancialReport() {
         // Log Usage if metadata exists
         if (usageMetadata) {
             const { promptTokenCount, candidatesTokenCount } = usageMetadata;
-            await logGeminiUsage("gemini-2.5-flash", promptTokenCount, candidatesTokenCount, "Weekly Financial Assessment");
+            await logGeminiUsage("gemini-2.5-flash", promptTokenCount, candidatesTokenCount, "Monthly Financial Assessment");
         }
 
         return responseText;
@@ -122,5 +167,6 @@ async function generateFinancialReport() {
 }
 
 module.exports = {
-    generateFinancialReport
+    generateFinancialReport,
+    checkDataAvailability
 };

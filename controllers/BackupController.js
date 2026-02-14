@@ -5,7 +5,7 @@ const BackupController = {
     getBackup: async function (req, res) {
         try {
             // Fetch data from all tables
-            const tables = ['users', 'category', 'subCategory', 'spendings', 'incomeSource', 'income'];
+            const tables = ['users', 'category', 'subCategory', 'spendings', 'incomeSource', 'income', 'cycle_reports', 'advisor_context', 'report_logs', 'gemini_usage', 'budget'];
             const backupData = {};
 
             for (const table of tables) {
@@ -35,7 +35,7 @@ const BackupController = {
                 return res.status(400).json({ error: 'Invalid backup data format' });
             }
 
-            const tables = ['users', 'category', 'subCategory', 'spendings', 'incomeSource', 'income'];
+            const tables = ['users', 'category', 'subCategory', 'spendings', 'incomeSource', 'income', 'cycle_reports', 'advisor_context', 'report_logs', 'gemini_usage', 'budget'];
 
             // Validate structure roughly
             for (const table of tables) {

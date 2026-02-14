@@ -1,82 +1,98 @@
 const cron = require('node-cron');
 const db = require('../../models/dbConnection');
 const { sendMessage } = require('./bot');
-const { generateFinancialReport } = require('./financialAdvisor');
+const { generateFinancialReport, checkDataAvailability } = require('./financialAdvisor');
 
-// Helper to get ISO week number
-function getWeekNumber(d) {
-    d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-    var yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    var weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-    return weekNo;
-}
-
-async function checkAndRunWeeklyAssessment() {
-    console.log('[Scheduler] Checking if weekly assessment is due...');
+async function checkAndRunMonthlyAssessment() {
+    console.log('[Scheduler] Checking if monthly assessment is due...');
     const now = new Date();
-    const currentWeek = getWeekNumber(now);
-    const currentYear = now.getFullYear();
 
-    // Check if we already ran for this week
-    // We look for 'WEEKLY_ASSESSMENT' type logs created in the last 7 days that match current week logic 
-    // Simplified: Just order by date desc and see if the last one was this week.
+    // Calculate the "last closed cycle"
+    // If today is Feb 14, current cycle is Jan 26 - Feb 25 (not closed).
+    // Last closed cycle was Dec 26 - Jan 25.
 
-    // Actually, let's just check if there is an entry for this week/year
-    // Since SQL doesn't have a simple ISO week function that matches JS exactly everywhere, 
-    // we'll rely on the application logic: "Did we run it this week?"
-    // A simple heuristic: Did we run it in the current week window (Monday-Sunday)?
+    // Logic: 
+    // If today >= 26th, the cycle that just finished ended on the 25th of THIS month.
+    // If today < 26th, the cycle that just finished ended on the 25th of LAST month.
 
-    // Retrieve the last assessment date
-    const rows = await db(
-        `SELECT timestamp FROM report_logs WHERE reportType = 'WEEKLY_ASSESSMENT' ORDER BY timestamp DESC LIMIT 1`
-    );
+    let cycleStartDate, cycleEndDate;
 
-    let shouldRun = true;
-    if (rows.length > 0) {
-        const lastRunDate = new Date(rows[0].timestamp);
-        const lastRunWeek = getWeekNumber(lastRunDate);
-        const lastRunYear = lastRunDate.getFullYear();
-
-        if (lastRunYear === currentYear && lastRunWeek === currentWeek) {
-            shouldRun = false;
-            console.log(`[Scheduler] Weekly assessment already sent for Week ${currentWeek}, Year ${currentYear}.`);
-        }
+    if (now.getDate() >= 26) {
+        // Cycle ended on the 25th of THIS month
+        // Start: 26th of LAST month
+        // End: 25th of THIS month
+        cycleStartDate = new Date(now.getFullYear(), now.getMonth() - 1, 26);
+        cycleEndDate = new Date(now.getFullYear(), now.getMonth(), 25);
+    } else {
+        // Cycle ended on the 25th of LAST month
+        // Start: 26th of 2 months ago
+        // End: 25th of LAST month
+        cycleStartDate = new Date(now.getFullYear(), now.getMonth() - 2, 26);
+        cycleEndDate = new Date(now.getFullYear(), now.getMonth() - 1, 25);
     }
 
-    if (shouldRun) {
-        console.log('[Scheduler] Generating weekly assessment...');
-        const report = await generateFinancialReport();
+    // Format dates for DB (YYYY-MM-DD)
+    const startDateStr = cycleStartDate.toISOString().slice(0, 10);
+    const endDateStr = cycleEndDate.toISOString().slice(0, 10);
+
+    console.log(`[Scheduler] Targeting cycle: ${startDateStr} to ${endDateStr}`);
+
+    try {
+        // 1. Check if we already sent a report for this cycle
+        const existingDetails = await db(
+            'SELECT reportId, status FROM cycle_reports WHERE cycleStartDate = ? AND cycleEndDate = ? AND status = "SUCCESS"',
+            [startDateStr, endDateStr]
+        );
+
+        if (existingDetails.length > 0) {
+            console.log(`[Scheduler] Report for cycle ${startDateStr} to ${endDateStr} already sent.`);
+            return;
+        }
+
+        // 2. Check if data is complete
+        // We need data for the 25th (or later) to consider the cycle "complete" regarding data ingestion.
+        // User requested: "only run it has complete data either it has data 25th and assesment for that month didnt run yet, or we have data for 26 or future dates"
+
+        const isDataReady = await checkDataAvailability(cycleStartDate, cycleEndDate);
+
+        if (!isDataReady) {
+            console.log(`[Scheduler] Data not complete for cycle ${startDateStr} to ${endDateStr}. Waiting for data...`);
+            return;
+        }
+
+        // 3. Generate Report
+        console.log('[Scheduler] Generating monthly assessment...');
+        const report = await generateFinancialReport(cycleStartDate, cycleEndDate);
 
         if (report) {
             await sendMessage(report);
 
-            // Log to DB
-            // We use report_logs now.
-            // Columns: logId, reportType, timestamp
+            // 4. Log success
             await db(
-                `INSERT INTO report_logs (reportType, timestamp) VALUES (?, NOW())`,
-                ['WEEKLY_ASSESSMENT']
+                `INSERT INTO cycle_reports (cycleStartDate, cycleEndDate, status) VALUES (?, ?, 'SUCCESS')`,
+                [startDateStr, endDateStr]
             );
-            console.log('[Scheduler] Assessment sent and logged.');
+            console.log('[Scheduler] Monthly assessment sent and logged.');
         }
+
+    } catch (error) {
+        console.error('[Scheduler] Error in monthly assessment check:', error);
     }
 }
 
 function initScheduler() {
-    // Schedule to run every Monday at 9:00 AM
-    cron.schedule('0 9 * * 1', () => {
-        checkAndRunWeeklyAssessment();
+    // Schedule to run every day at 9:00 AM
+    cron.schedule('0 9 * * *', () => {
+        checkAndRunMonthlyAssessment();
     });
 
-    // Also run a check on startup, in case we missed the cron (e.g. server was down)
-    // Delay slightly to ensure DB connection
+    // Also run a check on startup
     setTimeout(() => {
-        checkAndRunWeeklyAssessment();
+        checkAndRunMonthlyAssessment();
     }, 5000);
 }
 
 module.exports = {
     initScheduler,
-    checkAndRunWeeklyAssessment // Export for manual triggering if needed
+    checkAndRunMonthlyAssessment
 };

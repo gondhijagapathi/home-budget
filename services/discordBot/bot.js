@@ -1,15 +1,20 @@
-const { Client, GatewayIntentBits } = require('discord.js');
+const { Client, GatewayIntentBits, Events } = require('discord.js');
 
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent
     ]
 });
 
-client.once('ready', () => {
+client.once(Events.ClientReady, () => {
     console.log(`[Discord] Bot logged in as ${client.user.tag}`);
 });
+
+const { handleCommand } = require('./commandHandler');
+
+client.on('messageCreate', handleCommand);
 
 async function sendMessage(message) {
     const channelId = process.env.DISCORD_CHANNEL_ID;
