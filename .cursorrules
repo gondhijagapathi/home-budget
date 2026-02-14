@@ -22,7 +22,7 @@ We use the Google Gemini API for generative AI capabilities.
     ```
 
 2.  **Model Selection**:
-    Use current models like `gemini-2.0-flash` or `gemini-1.5-pro` as appropriate for the task. Check strictly for model availability and deprecations.
+    Use current models like `gemini-2.5-flash` as appropriate for the task. Check strictly for model availability and deprecations.
 
 3.  **Generating Content**:
     Use the `models.generateContent` method.

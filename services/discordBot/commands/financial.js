@@ -189,7 +189,10 @@ module.exports = {
                     try {
                         let targetMonth = args[1]; // Optional month argument for view
                         if (!targetMonth) {
-                            targetMonth = new Date().toISOString().slice(0, 7); // Default to current month
+                            const now = new Date();
+                            const year = now.getFullYear();
+                            const month = String(now.getMonth() + 1).padStart(2, '0');
+                            targetMonth = `${year}-${month}`; // Default to current month (Local)
                         }
 
                         // Validate if user provided a month

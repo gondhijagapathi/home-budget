@@ -13,7 +13,10 @@ const backupController = require('../controllers/BackupController');
 const uploadController = require('../controllers/UploadController');
 const usageController = require('../controllers/UsageController');
 const multer = require('multer');
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({
+  dest: 'uploads/',
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB Limit
+});
 
 
 router.route('/users')

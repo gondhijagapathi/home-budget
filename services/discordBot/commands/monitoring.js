@@ -24,8 +24,15 @@ module.exports = {
                     console.error(e);
                 }
 
-                const uptime = process.uptime();
-                const uptimeString = new Date(uptime * 1000).toISOString().substr(11, 8);
+                const uptimeSeconds = process.uptime();
+                const days = Math.floor(uptimeSeconds / 86400);
+                const hours = Math.floor((uptimeSeconds % 86400) / 3600);
+                const minutes = Math.floor((uptimeSeconds % 3600) / 60);
+                const seconds = Math.floor(uptimeSeconds % 60);
+
+                let uptimeString = '';
+                if (days > 0) uptimeString += `${days}d `;
+                uptimeString += `${hours}h ${minutes}m ${seconds}s`;
 
                 const statusMsg = `**System Status**
 **Database**: ${dbStatus}
@@ -41,17 +48,19 @@ module.exports = {
             'usage',
             async (message) => {
                 try {
-                    // Check if table exists first (graceful degradation)
-                    // We assume it exists based on plan, but good to wrap in try/catch for query error
-                    const today = new Date().toISOString().slice(0, 10);
-                    const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
+                    // Fix: Use local date construction for month start instead of toISOString() which shifts to UTC
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    const month = String(now.getMonth() + 1).padStart(2, '0');
+                    const startOfMonth = `${year}-${month}-01`;
 
-                    const todayQuery = `SELECT SUM(totalTokens) as total FROM gemini_usage WHERE DATE(timestamp) = ?`;
+                    // Fix: Use CURDATE() for "today" to match server's day boundary exactly
+                    const todayQuery = `SELECT SUM(totalTokens) as total FROM gemini_usage WHERE DATE(timestamp) = CURDATE()`;
                     const monthQuery = `SELECT SUM(totalTokens) as total FROM gemini_usage WHERE timestamp >= ?`;
                     const allTimeQuery = `SELECT SUM(totalTokens) as total FROM gemini_usage`;
 
                     const [todayRes, monthRes, allTimeRes] = await Promise.all([
-                        db(todayQuery, [today]),
+                        db(todayQuery),
                         db(monthQuery, [startOfMonth]),
                         db(allTimeQuery)
                     ]);

@@ -6,7 +6,10 @@ const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 // Check if we have data for the end of the cycle (25th) or later
 async function checkDataAvailability(startDate, endDate) {
-    const endDateStr = endDate.toISOString().slice(0, 10);
+    const year = endDate.getFullYear();
+    const month = String(endDate.getMonth() + 1).padStart(2, '0');
+    const day = String(endDate.getDate()).padStart(2, '0');
+    const endDateStr = `${year}-${month}-${day}`;
 
     // Check Spending OR Income for any record >= endDate
     const query = `
@@ -50,10 +53,16 @@ async function getMonthlyFinancialData(currentStart, currentEnd) {
     lastEnd = new Date(currentEnd);
     lastEnd.setMonth(lastEnd.getMonth() - 1);
 
-    const currentStartStr = currentStart.toISOString().slice(0, 19).replace('T', ' ');
-    const currentEndStr = currentEnd.toISOString().slice(0, 19).replace('T', ' ');
-    const lastStartStr = lastStart.toISOString().slice(0, 19).replace('T', ' ');
-    const lastEndStr = lastEnd.toISOString().slice(0, 19).replace('T', ' ');
+    // Helper to format date as 'YYYY-MM-DD HH:mm:ss' in Local Time
+    const formatLocal = (d) => {
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    };
+
+    const currentStartStr = formatLocal(currentStart);
+    const currentEndStr = formatLocal(currentEnd);
+    const lastStartStr = formatLocal(lastStart);
+    const lastEndStr = formatLocal(lastEnd);
 
     // Fetch Spending
     const spendingQuery = `

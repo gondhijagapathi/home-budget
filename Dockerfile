@@ -39,5 +39,8 @@ COPY services/ ./services/
 # 3. Built frontend from stage 1 (webpack outputs to build/)
 COPY --from=frontend-build /app/build ./build
 
+# Constants
+RUN mkdir -p uploads
+
 EXPOSE 8083
 CMD ["node", "server.js"]
